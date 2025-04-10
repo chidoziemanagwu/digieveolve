@@ -1,0 +1,422 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-8">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Module Quiz</h2>
+                    <p class="text-gray-600">{{ module.title }}</p>
+                </div>
+                <a href="{% url 'courses:admin_course_modules' course.id %}" 
+                   class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Quiz Questions List -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Questions</h3>
+                    <button onclick="openAddQuestionModal()" 
+                            class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-plus mr-2"></i>Add Question
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200">
+                    {% if questions %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for question in questions %}
+                        <li class="p-4 hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded">
+                                            Question {{ forloop.counter }}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-900 font-medium">{{ question.text }}</p>
+                                    
+                                    <!-- Options -->
+                                    <div class="mt-2 space-y-2">
+                                        {% for option in question.options.all %}
+                                        <div class="flex items-center {% if option.is_correct %}text-green-600{% else %}text-gray-600{% endif %}">
+                                            <span class="mr-2">
+                                                {% if option.is_correct %}
+                                                <i class="fas fa-check-circle"></i>
+                                                {% else %}
+                                                <i class="far fa-circle"></i>
+                                                {% endif %}
+                                            </span>
+                                            {{ option.text }}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Question Actions -->
+                                <div class="ml-4 flex items-center space-x-3">
+                                    <button onclick="editQuestion({{ question.id }})" 
+                                            class="text-blue-600 hover:text-blue-900">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form method="POST" 
+                                          action="{% url 'courses:admin_delete_question' course.id module.id question.id %}"
+                                          class="inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this question?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="p-8 text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                            <i class="fas fa-question-circle text-gray-400 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500 text-lg mb-2">No questions added yet</p>
+                        <p class="text-gray-400 mb-4">Start by adding your first question to this quiz</p>
+                        <button onclick="openAddQuestionModal()" 
+                                class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-plus mr-2"></i>Add First Question
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quiz Settings -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quiz Settings</h3>
+                <form method="POST" action="{% url 'courses:admin_update_quiz_settings' course.id module.id %}">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Passing Score (%)
+                            </label>
+                            <input type="number" 
+                                   name="passing_score" 
+                                   value="{{ quiz.passing_score }}"
+                                   min="0" 
+                                   max="100"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Time Limit (minutes)
+                            </label>
+                            <input type="number" 
+                                   name="time_limit" 
+                                   value="{{ quiz.time_limit }}"
+                                   min="1"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" 
+                                class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                            Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Question Modal -->
+<div id="questionModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-10">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold" id="modalTitle">Add Question</h3>
+                <button onclick="closeQuestionModal()" class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="questionForm" method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="question_id" id="questionId">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Question Text *
+                    </label>
+                    <textarea name="question_text" 
+                              id="questionText"
+                              required
+                              rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"></textarea>
+                </div>
+
+                <div id="optionsContainer" class="space-y-3">
+                    <label class="block text-sm font-medium text-gray-700">Options *</label>
+                    <div class="option-row flex items-center space-x-2">
+                        <input type="text" 
+                               name="options[]" 
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                               placeholder="Option text"
+                               required>
+                        <input type="radio" 
+                               name="correct_option" 
+                               value="0"
+                               required>
+                        <button type="button" 
+                                onclick="removeOption(this)"
+                                class="text-red-600 hover:text-red-900">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" 
+                        onclick="addOption()"
+                        class="text-amber-600 hover:text-amber-700 text-sm">
+                    <i class="fas fa-plus mr-1"></i>Add Option
+                </button>
+
+                <div class="flex justify-end pt-4">
+                    <button type="button" 
+                            onclick="closeQuestionModal()"
+                            class="mr-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600">
+                        Save Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Modal -->
+<div id="notificationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-20">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="flex flex-col items-center">
+            <div id="notificationIcon" class="mb-4 rounded-full p-4">
+                <!-- Icon will be inserted here by JS -->
+            </div>
+            <h3 id="notificationTitle" class="text-lg font-semibold mb-2">Notification Title</h3>
+            <p id="notificationMessage" class="text-center text-gray-600 mb-6">Notification message goes here.</p>
+            <button onclick="closeNotificationModal()" 
+                    class="px-6 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 transition-colors">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let optionCount = 1;
+
+    function openAddQuestionModal() {
+        document.getElementById('modalTitle').textContent = 'Add Question';
+        document.getElementById('questionId').value = '';
+        document.getElementById('questionText').value = '';
+        document.getElementById('questionForm').action = "{% url 'courses:admin_add_question' course.id module.id %}";
+        resetOptions();
+        document.getElementById('questionModal').classList.remove('hidden');
+    }
+
+    function editQuestion(questionId) {
+        document.getElementById('modalTitle').textContent = 'Edit Question';
+        document.getElementById('questionId').value = questionId;
+        
+        // Set the form action
+        document.getElementById('questionForm').setAttribute('data-question-id', questionId);
+        
+        // Fetch question data and populate form
+        fetch(`{% url 'courses:admin_get_question' course_id=course.id module_id=module.id %}?question_id=${questionId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('questionText').value = data.text;
+                resetOptions();
+                data.options.forEach((option, index) => {
+                    if (index > 0) addOption();
+                    const optionRows = document.getElementsByClassName('option-row');
+                    const lastRow = optionRows[index];
+                    lastRow.querySelector('input[type="text"]').value = option.text;
+                    lastRow.querySelector('input[type="radio"]').checked = option.is_correct;
+                });
+            });
+
+        document.getElementById('questionModal').classList.remove('hidden');
+        
+        // Prevent the default form submission and handle it via AJAX
+        document.getElementById('questionForm').onsubmit = function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const quizId = {{ quiz.id }};  // Get the quiz ID from the template context
+            const questionId = this.getAttribute('data-question-id');
+            
+            fetch(`/courses/quiz/${quizId}/questions/${questionId}/edit/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success notification
+                    showNotification('success', 'Success!', data.message);
+                    // Close the question modal
+                    closeQuestionModal();
+                    // Reload the page after notification is closed
+                    document.getElementById('notificationModal').setAttribute('data-reload', 'true');
+                } else {
+                    // Show error notification
+                    showNotification('error', 'Error', data.error || 'An error occurred');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Error', 'An error occurred while saving the question');
+            });
+            
+            return false;
+        };
+    }
+
+    function closeQuestionModal() {
+        document.getElementById('questionModal').classList.add('hidden');
+    }
+
+    function showNotification(type, title, message) {
+        const modal = document.getElementById('notificationModal');
+        const iconContainer = document.getElementById('notificationIcon');
+        const titleElement = document.getElementById('notificationTitle');
+        const messageElement = document.getElementById('notificationMessage');
+        
+        // Set content
+        titleElement.textContent = title;
+        messageElement.textContent = message;
+        
+        // Set icon and colors based on type
+        if (type === 'success') {
+            iconContainer.className = 'mb-4 rounded-full p-4 bg-green-100 text-green-500';
+            iconContainer.innerHTML = '<i class="fas fa-check-circle text-3xl"></i>';
+        } else if (type === 'error') {
+            iconContainer.className = 'mb-4 rounded-full p-4 bg-red-100 text-red-500';
+            iconContainer.innerHTML = '<i class="fas fa-exclamation-circle text-3xl"></i>';
+        } else if (type === 'warning') {
+            iconContainer.className = 'mb-4 rounded-full p-4 bg-yellow-100 text-yellow-500';
+            iconContainer.innerHTML = '<i class="fas fa-exclamation-triangle text-3xl"></i>';
+        } else {
+            iconContainer.className = 'mb-4 rounded-full p-4 bg-blue-100 text-blue-500';
+            iconContainer.innerHTML = '<i class="fas fa-info-circle text-3xl"></i>';
+        }
+        
+        // Show the modal
+        modal.classList.remove('hidden');
+    }
+
+    function closeNotificationModal() {
+        const modal = document.getElementById('notificationModal');
+        modal.classList.add('hidden');
+        
+        // Check if page reload is needed
+        if (modal.getAttribute('data-reload') === 'true') {
+            window.location.reload();
+        }
+    }
+
+    function addOption() {
+        const container = document.getElementById('optionsContainer');
+        const newOption = document.createElement('div');
+        newOption.className = 'option-row flex items-center space-x-2';
+        newOption.innerHTML = `
+            <input type="text" 
+                   name="options[]" 
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                   placeholder="Option text"
+                   required>
+            <input type="radio" 
+                   name="correct_option" 
+                   value="${optionCount}"
+                   required>
+            <button type="button" 
+                    onclick="removeOption(this)"
+                    class="text-red-600 hover:text-red-900">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        container.appendChild(newOption);
+        optionCount++;
+    }
+
+    function removeOption(button) {
+        const optionRows = document.getElementsByClassName('option-row');
+        if (optionRows.length > 1) {
+            button.parentElement.remove();
+            // Update radio values
+            Array.from(optionRows).forEach((row, index) => {
+                row.querySelector('input[type="radio"]').value = index;
+            });
+            optionCount = optionRows.length;
+        }
+    }
+
+    function resetOptions() {
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700">Options *</label>
+            <div class="option-row flex items-center space-x-2">
+                <input type="text" 
+                       name="options[]" 
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                       placeholder="Option text"
+                       required>
+                <input type="radio" 
+                       name="correct_option" 
+                       value="0"
+                       required>
+                <button type="button" 
+                        onclick="removeOption(this)"
+                        class="text-red-600 hover:text-red-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        optionCount = 1;
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const questionModal = document.getElementById('questionModal');
+        const notificationModal = document.getElementById('notificationModal');
+        
+        if (event.target == questionModal) {
+            closeQuestionModal();
+        }
+        
+        if (event.target == notificationModal) {
+            closeNotificationModal();
+        }
+    }
+</script>
+{% endblock %}

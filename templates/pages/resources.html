@@ -27,171 +27,190 @@
     </div>
 </section>
 
-
 <!-- Resources Header & Filter -->
 <section class="py-10 bg-white border-b">
     <div class="container mx-auto px-4">
         <div class="flex flex-col md:flex-row md:justify-between md:items-center">
             <h2 class="text-2xl font-bold mb-4 md:mb-0">Learning Resources</h2>
             <div class="flex flex-wrap gap-2">
-                <a href="{% url 'core:resources' %}" class="bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600 transition-colors">
+                <a href="{% url 'resources:list' %}" class="{% if not category_filter %}bg-amber-500 text-white{% else %}bg-gray-200 text-gray-800{% endif %} px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
                     All
                 </a>
-                <a href="{% url 'core:resources' %}?category=learning-materials" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
-                    Learning Materials
+                {% for category_type, category_name in resource_category_types %}
+                <a href="{% url 'resources:list' %}?category={{ category_type }}" class="{% if category_filter == category_type %}bg-amber-500 text-white{% else %}bg-gray-200 text-gray-800{% endif %} px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
+                    {{ category_name }}
                 </a>
-                <a href="{% url 'core:resources' %}?category=career-resources" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
-                    Career Resources
-                </a>
-                <a href="{% url 'core:resources' %}?category=research-papers" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
-                    Research Papers
-                </a>
+                {% endfor %}
             </div>
         </div>
     </div>
 </section>
 
-
 <!-- Resources Grid -->
 <section class="py-16 bg-white">
     <div class="container mx-auto px-4">
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Resource Card - Python -->
+            <!-- Technical Resources -->
+            {% if technical_resources %}
+            {% with resource=technical_resources.0 %}
             <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
                  data-aos="fade-up" data-aos-delay="50">
                 <div class="relative pb-48">
-                    <img src="{% static 'images/resources/python-docs.jpg' %}" 
-                         alt="Python Documentation" 
+                    {% if resource.category.image %}
+                    <img src="{{ resource.category.image.url }}" 
+                         alt="{{ resource.category.title }}" 
                          class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Python+Documentation'">
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
+                    {% else %}
+                    <img src="{% static 'images/resources/python-docs.jpg' %}" 
+                         alt="{{ resource.category.title }}" 
+                         class="absolute inset-0 h-full w-full object-cover"
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
+                    {% endif %}
                     <div class="absolute top-0 right-0 m-2">
                         <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-                            Technical
+                            {{ resource.category.get_category_type_display }}
                         </span>
                     </div>
                 </div>
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-3">Python for Data Analysis</h3>
+                    <h3 class="text-xl font-semibold mb-3">{{ resource.category.title }}</h3>
                     <p class="text-gray-600 mb-4">
-                        Comprehensive guides, tutorials, and reference materials for using Python in data analytics and science.
+                        {{ resource.category.description|truncatewords:20 }}
                     </p>
                     
                     <!-- Content list -->
                     <ul class="mb-4 space-y-2">
+                        {% for res in technical_resources|slice:":2" %}
                         <li class="flex items-start">
-                            <i class="fas fa-file-pdf text-amber-500 mt-1 mr-2"></i>
+                            <i class="fas {% if res.file_type == 'pdf' %}fa-file-pdf{% elif res.file_type == 'doc' %}fa-file-word{% elif res.file_type == 'code' %}fa-file-code{% else %}fa-file-alt{% endif %} text-amber-500 mt-1 mr-2"></i>
                             <div>
-                                <!-- To match your model's get_absolute_url: -->
-                                <a href="{% url 'resources:category_detail' 'python' %}" class="text-gray-800 hover:text-amber-500 font-medium">View all Python resources</a>
-                                <p class="text-sm text-gray-500">Quick reference for common Pandas operations</p>
+                                <a href="{% url 'resources:detail' res.slug %}" class="text-gray-800 hover:text-amber-500 font-medium">{{ res.title }}</a>
+                                <p class="text-sm text-gray-500">{{ res.description|truncatewords:8 }}</p>
                             </div>
                         </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-file-code text-amber-500 mt-1 mr-2"></i>
-                            <div>
-                                <a href="{% url 'resources:detail' 'data-visualization-guide' %}" class="text-gray-800 hover:text-amber-500 font-medium">Data Visualization Guide</a>
-                                <p class="text-sm text-gray-500">Tutorial on creating effective visualizations</p>
-                            </div>
-                        </li>
+                        {% endfor %}
                     </ul>
                     
                     <div class="border-t pt-4">
-                        <a href="{% url 'resources:category' 'python' %}" class="text-amber-500 hover:text-amber-600 font-medium">
-                            View all Python resources <i class="fas fa-arrow-right ml-1"></i>
+                        <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-amber-500 hover:text-amber-600 font-medium">
+                            View all {{ resource.category.title }} resources <i class="fas fa-arrow-right ml-1"></i>
                         </a>
                     </div>
                 </div>
             </div>
+            {% endwith %}
+            {% endif %}
 
-            <!-- Resource Card - Career Resources -->
+            <!-- Career Resources -->
+            {% if career_resources %}
+            {% with resource=career_resources.0 %}
             <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
                  data-aos="fade-up" data-aos-delay="100">
                 <div class="relative pb-48">
-                    <img src="{% static 'images/resources/career.jpg' %}" 
-                         alt="Career Resources" 
+                    {% if resource.category.image %}
+                    <img src="{{ resource.category.image.url }}" 
+                         alt="{{ resource.category.title }}" 
                          class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Career+Resources'">
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
+                    {% else %}
+                    <img src="{% static 'images/resources/career.jpg' %}" 
+                         alt="{{ resource.category.title }}" 
+                         class="absolute inset-0 h-full w-full object-cover"
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
+                    {% endif %}
                     <div class="absolute top-0 right-0 m-2">
                         <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-                            Career
+                            {{ resource.category.get_category_type_display }}
                         </span>
                     </div>
                 </div>
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-3">Career Development</h3>
+                    <h3 class="text-xl font-semibold mb-3">{{ resource.category.title }}</h3>
                     <p class="text-gray-600 mb-4">
-                        Resources to help you navigate and advance your career in tech and data fields.
+                        {{ resource.category.description|truncatewords:20 }}
                     </p>
                     
                     <ul class="mb-4 space-y-2">
+                        {% for res in career_resources|slice:":2" %}
                         <li class="flex items-start">
-                            <i class="fas fa-file-pdf text-amber-500 mt-1 mr-2"></i>
+                            <i class="fas {% if res.file_type == 'pdf' %}fa-file-pdf{% elif res.file_type == 'doc' %}fa-file-word{% elif res.file_type == 'code' %}fa-file-code{% else %}fa-file-alt{% endif %} text-amber-500 mt-1 mr-2"></i>
                             <div>
-                                <a href="{% url 'resources:detail' 'career-pathways-guide' %}" class="text-gray-800 hover:text-amber-500 font-medium">Career Pathways Guide</a>
-                                <p class="text-sm text-gray-500">Roadmaps for different tech careers</p>
+                                <a href="{% url 'resources:detail' res.slug %}" class="text-gray-800 hover:text-amber-500 font-medium">{{ res.title }}</a>
+                                <p class="text-sm text-gray-500">{{ res.description|truncatewords:8 }}</p>
                             </div>
                         </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-file-alt text-amber-500 mt-1 mr-2"></i>
-                            <div>
-                                <a href="{% url 'resources:detail' 'salary-survey-2024' %}" class="text-gray-800 hover:text-amber-500 font-medium">Salary Survey 2024</a>
-                                <p class="text-sm text-gray-500">Comprehensive salary information</p>
-                            </div>
-                        </li>
+                        {% endfor %}
                     </ul>
                     
                     <div class="border-t pt-4">
-                        <a href="{% url 'resources:category' 'career' %}" class="text-amber-500 hover:text-amber-600 font-medium">
-                            View all career resources <i class="fas fa-arrow-right ml-1"></i>
+                        <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-amber-500 hover:text-amber-600 font-medium">
+                            View all {{ resource.category.title }} resources <i class="fas fa-arrow-right ml-1"></i>
                         </a>
                     </div>
                 </div>
             </div>
+            {% endwith %}
+            {% endif %}
 
-            <!-- Resource Card - Research -->
+            <!-- Research Resources -->
+            {% if research_resources %}
+            {% with resource=research_resources.0 %}
             <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
                  data-aos="fade-up" data-aos-delay="150">
                 <div class="relative pb-48">
-                    <img src="{% static 'images/resources/research.jpg' %}" 
-                         alt="Research Materials" 
+                    {% if resource.category.image %}
+                    <img src="{{ resource.category.image.url }}" 
+                         alt="{{ resource.category.title }}" 
                          class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Research+Materials'">
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
+                    {% else %}
+                    <img src="{% static 'images/resources/research.jpg' %}" 
+                         alt="{{ resource.category.title }}" 
+                         class="absolute inset-0 h-full w-full object-cover"
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
+                    {% endif %}
                     <div class="absolute top-0 right-0 m-2">
                         <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-                            Research
+                            {{ resource.category.get_category_type_display }}
                         </span>
                     </div>
                 </div>
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-3">Research Papers</h3>
+                    <h3 class="text-xl font-semibold mb-3">{{ resource.category.title }}</h3>
                     <p class="text-gray-600 mb-4">
-                        Latest academic and industry research in AI, ML, and data science fields.
+                        {{ resource.category.description|truncatewords:20 }}
                     </p>
                     
                     <ul class="mb-4 space-y-2">
+                        {% for res in research_resources|slice:":2" %}
                         <li class="flex items-start">
-                            <i class="fas fa-file-pdf text-amber-500 mt-1 mr-2"></i>
+                            <i class="fas {% if res.file_type == 'pdf' %}fa-file-pdf{% elif res.file_type == 'doc' %}fa-file-word{% elif res.file_type == 'code' %}fa-file-code{% else %}fa-file-alt{% endif %} text-amber-500 mt-1 mr-2"></i>
                             <div>
-                                <a href="{% url 'resources:detail' 'ai-ethics-framework' %}" class="text-gray-800 hover:text-amber-500 font-medium">AI Ethics Framework</a>
-                                <p class="text-sm text-gray-500">Research on ethical AI development</p>
+                                <a href="{% url 'resources:detail' res.slug %}" class="text-gray-800 hover:text-amber-500 font-medium">{{ res.title }}</a>
+                                <p class="text-sm text-gray-500">{{ res.description|truncatewords:8 }}</p>
                             </div>
                         </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-file-pdf text-amber-500 mt-1 mr-2"></i>
-                            <div>
-                                <a href="{% url 'resources:detail' 'data-governance-study' %}" class="text-gray-800 hover:text-amber-500 font-medium">Data Governance Study</a>
-                                <p class="text-sm text-gray-500">Best practices for data management</p>
-                            </div>
-                        </li>
+                        {% endfor %}
                     </ul>
                     
                     <div class="border-t pt-4">
-                        <a href="{% url 'resources:category' 'research' %}" class="text-amber-500 hover:text-amber-600 font-medium">
-                            View all research papers <i class="fas fa-arrow-right ml-1"></i>
+                        <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-amber-500 hover:text-amber-600 font-medium">
+                            View all {{ resource.category.title }} resources <i class="fas fa-arrow-right ml-1"></i>
                         </a>
                     </div>
                 </div>
             </div>
+            {% endwith %}
+            {% endif %}
+
+            {% if not technical_resources and not career_resources and not research_resources %}
+            <div class="col-span-3 text-center py-12">
+                <i class="fas fa-folder-open text-gray-300 text-5xl mb-4"></i>
+                <h3 class="text-xl text-gray-500">No resources found</h3>
+                <p class="text-gray-400 mt-2">Resources will be added soon.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </section>
@@ -207,7 +226,33 @@
         </div>
         
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Blog Post 1 -->
+            {% for post in blog_posts %}
+            <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="relative pb-60">
+                    {% if post.featured_image %}
+                    <img src="{{ post.featured_image.url }}" 
+                         alt="{{ post.title }}" 
+                         class="absolute inset-0 h-full w-full object-cover">
+                    {% else %}
+                    <img src="{% static 'images/blog/python-analytics.jpg' %}" 
+                         alt="{{ post.title }}" 
+                         class="absolute inset-0 h-full w-full object-cover"
+                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ post.title|urlencode }}'">
+                    {% endif %}
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center text-sm text-gray-500 mb-2">
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">{{ post.category.name }}</span>
+                        <span class="mx-2">•</span>
+                        <span>{{ post.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
+                    <p class="text-gray-600 mb-4">{{ post.excerpt|default:post.content|truncatewords:15 }}</p>
+                    <a href="{{ post.get_absolute_url }}" class="text-amber-500 hover:text-amber-600 font-medium">Read more</a>
+                </div>
+            </div>
+            {% empty %}
+            <!-- If no blog posts, show placeholder content -->
             <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
                 <div class="relative pb-60">
                     <img src="{% static 'images/blog/python-analytics.jpg' %}" 
@@ -219,15 +264,14 @@
                     <div class="flex items-center text-sm text-gray-500 mb-2">
                         <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">Python</span>
                         <span class="mx-2">•</span>
-                        <span>Oct 15, 2024</span>
+                        <span>Coming Soon</span>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">Getting Started with Python for Data Analytics</h3>
                     <p class="text-gray-600 mb-4">Learn how to leverage Python's powerful libraries for data analysis and visualization.</p>
-                    <a href="{% url 'blog:detail' 'getting-started-with-python' %}" class="text-amber-500 hover:text-amber-600 font-medium">Read more</a>
+                    <a href="#" class="text-amber-500 hover:text-amber-600 font-medium">Coming soon</a>
                 </div>
             </div>
             
-            <!-- Blog Post 2 -->
             <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
                 <div class="relative pb-60">
                     <img src="{% static 'images/blog/career-transition.jpg' %}" 
@@ -239,15 +283,14 @@
                     <div class="flex items-center text-sm text-gray-500 mb-2">
                         <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">Career</span>
                         <span class="mx-2">•</span>
-                        <span>Oct 10, 2024</span>
+                        <span>Coming Soon</span>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">5 Steps to Transition into a Data Science Career</h3>
                     <p class="text-gray-600 mb-4">Practical advice for professionals looking to make the switch to data science.</p>
-                    <a href="{% url 'blog:detail' 'transition-to-data-science' %}" class="text-amber-500 hover:text-amber-600 font-medium">Read more</a>
+                    <a href="#" class="text-amber-500 hover:text-amber-600 font-medium">Coming soon</a>
                 </div>
             </div>
             
-            <!-- Blog Post 3 -->
             <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
                 <div class="relative pb-60">
                     <img src="{% static 'images/blog/ai-ethics.jpg' %}" 
@@ -259,78 +302,17 @@
                     <div class="flex items-center text-sm text-gray-500 mb-2">
                         <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">AI</span>
                         <span class="mx-2">•</span>
-                        <span>Oct 5, 2024</span>
+                        <span>Coming Soon</span>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">Ethical Considerations in AI Development</h3>
                     <p class="text-gray-600 mb-4">Understanding the ethical implications and responsibilities when developing AI systems.</p>
-                    <a href="{% url 'blog:detail' 'ethical-ai-development' %}" class="text-amber-500 hover:text-amber-600 font-medium">Read more</a>
+                    <a href="#" class="text-amber-500 hover:text-amber-600 font-medium">Coming soon</a>
                 </div>
             </div>
+            {% endfor %}
         </div>
     </div>
 </section>
-
-<!-- Popular Topics -->
-<section class="py-16 bg-gray-50">
-    <div class="container mx-auto px-4">
-        <h2 class="text-2xl font-bold mb-8 text-center">Popular Topics</h2>
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <!-- Topic Card - Python -->
-            <a href="{% url 'resources:category' 'python' %}" class="relative group rounded-lg overflow-hidden shadow-md">
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
-                <img src="{% static 'images/topics/python.jpg' %}" 
-                     alt="Python" 
-                     class="w-full h-40 object-cover transform group-hover:scale-105 transition-transform"
-                     onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Python'">
-                <div class="absolute bottom-0 left-0 p-4 z-20">
-                    <h3 class="text-white font-semibold">Python</h3>
-                    <span class="text-xs text-amber-200">24 resources</span>
-                </div>
-            </a>
-            
-            <!-- Topic Card - Data Science -->
-            <a href="{% url 'resources:category' 'data-science' %}" class="relative group rounded-lg overflow-hidden shadow-md">
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
-                <img src="{% static 'images/topics/data-science.jpg' %}" 
-                     alt="Data Science" 
-                     class="w-full h-40 object-cover transform group-hover:scale-105 transition-transform"
-                     onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Data+Science'">
-                <div class="absolute bottom-0 left-0 p-4 z-20">
-                    <h3 class="text-white font-semibold">Data Science</h3>
-                    <span class="text-xs text-amber-200">18 resources</span>
-                </div>
-            </a>
-            
-            <!-- Topic Card - Career Development -->
-            <a href="{% url 'resources:category' 'career' %}" class="relative group rounded-lg overflow-hidden shadow-md">
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
-                <img src="{% static 'images/topics/career.jpg' %}" 
-                     alt="Career Development" 
-                     class="w-full h-40 object-cover transform group-hover:scale-105 transition-transform"
-                     onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Career+Development'">
-                <div class="absolute bottom-0 left-0 p-4 z-20">
-                    <h3 class="text-white font-semibold">Career Development</h3>
-                    <span class="text-xs text-amber-200">12 resources</span>
-                </div>
-            </a>
-            
-            <!-- Topic Card - AI Ethics -->
-            <a href="{% url 'resources:category' 'ai-ethics' %}" class="relative group rounded-lg overflow-hidden shadow-md">
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
-                <img src="{% static 'images/topics/ai-ethics.jpg' %}" 
-                     alt="AI Ethics" 
-                     class="w-full h-40 object-cover transform group-hover:scale-105 transition-transform"
-                     onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=AI+Ethics'">
-                <div class="absolute bottom-0 left-0 p-4 z-20">
-                    <h3 class="text-white font-semibold">AI Ethics</h3>
-                    <span class="text-xs text-amber-200">8 resources</span>
-                </div>
-            </a>
-        </div>
-    </div>
-</section>
-
 
 <!-- Newsletter Signup -->
 <section class="py-16 bg-gray-800 text-white">
@@ -352,6 +334,7 @@
         </div>
     </div>
 </section>
+
 <!-- Call to Action -->
 <section class="py-16 bg-amber-50">
     <div class="container mx-auto px-4 text-center">

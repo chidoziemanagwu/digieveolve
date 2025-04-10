@@ -1,0 +1,482 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-semibold">{{ page_title }}</h2>
+                <p class="text-gray-600">
+                    Course: {{ quiz.module.course.title }} | 
+                    Module: {{ quiz.module.title }}
+                </p>
+            </div>
+            <button onclick="openAddQuestionModal()" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                <i class="fas fa-plus mr-2"></i>Add Question
+            </button>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Quiz Settings -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium mb-4">Quiz Settings</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Title</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.title.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.description.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Time Limit (minutes)</label>
+                    {{ form.time_limit }}
+                    {% if form.time_limit.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.time_limit.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Passing Score (%)</label>
+                    {{ form.passing_score }}
+                    {% if form.passing_score.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.passing_score.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    <i class="fas fa-save mr-2"></i>Save Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Questions List -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <h3 class="text-lg font-medium mb-4">Questions</h3>
+            <div class="space-y-4" id="questionsList">
+                {% for question in quiz.questions.all %}
+                <div class="border rounded-lg p-4" id="question-{{ question.id }}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-medium">{{ question.text }}</h4>
+                            <p class="text-gray-600">Type: {{ question.get_question_type_display }}</p>
+                            
+                            <!-- Question Answers -->
+                            <div class="mt-2 pl-4 space-y-2">
+                                {% for answer in question.answers.all %}
+                                <div class="flex items-center">
+                                    <span class="w-4 h-4 {% if answer.is_correct %}text-green-600{% else %}text-gray-400{% endif %}">
+                                        <i class="fas {% if answer.is_correct %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                                    </span>
+                                    <span class="ml-2">{{ answer.text }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editQuestion({{ question.id }})" 
+                                    class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form method="POST" 
+      action="{% url 'courses:admin_delete_question' quiz.id question.id %}"
+      class="inline"
+      onsubmit="return confirm('Are you sure you want to delete this question?');">
+    {% csrf_token %}
+    <button type="submit" 
+            class="text-red-600 hover:text-red-900">
+        <i class="fas fa-trash"></i>
+    </button>
+</form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <div class="text-gray-400 mb-4">
+                        <i class="fas fa-question-circle text-4xl"></i>
+                    </div>
+                    <p class="text-gray-500">No questions have been added to this quiz yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Question Modal -->
+<div id="questionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-medium mb-4" id="modalTitle">Add New Question</h3>
+            <form id="questionForm" method="POST" action="{% url 'courses:admin_add_question' quiz.id %}">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Question Text</label>
+                        <textarea name="text" rows="3" required
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Question Type</label>
+                        <select name="question_type" required onchange="handleQuestionTypeChange(this.value)"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="true_false">True/False</option>
+                            <option value="short_answer">Short Answer</option>
+                        </select>
+                    </div>
+                    <div id="answersContainer" class="space-y-2">
+                        <!-- Answers will be dynamically added here -->
+                    </div>
+                    <button type="button" onclick="addAnswerField()"
+                            id="addAnswerBtn"
+                            class="text-blue-600 hover:text-blue-900">
+                        <i class="fas fa-plus mr-1"></i>Add Answer Option
+                    </button>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" onclick="closeQuestionModal()"
+                            class="px-4 py-2 border rounded-md hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <span id="submitBtnText">Add Question</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentQuestionId = null;
+const quiz_id = {{ quiz.id }}; // Add this line to define quiz_id
+
+function openAddQuestionModal() {
+    currentQuestionId = null;
+    document.getElementById('modalTitle').textContent = 'Add New Question';
+    document.getElementById('submitBtnText').textContent = 'Add Question';
+    document.getElementById('questionForm').reset();
+    document.getElementById('questionForm').action = "{% url 'courses:admin_add_question' quiz.id %}";
+    document.getElementById('answersContainer').innerHTML = '';
+    document.getElementById('questionModal').classList.remove('hidden');
+    handleQuestionTypeChange('multiple_choice');
+}
+
+function closeQuestionModal() {
+    document.getElementById('questionModal').classList.add('hidden');
+}
+
+function handleQuestionTypeChange(questionType) {
+    const answersContainer = document.getElementById('answersContainer');
+    const addAnswerBtn = document.getElementById('addAnswerBtn');
+    
+    answersContainer.innerHTML = '';
+    
+    if (questionType === 'true_false') {
+        addAnswerBtn.style.display = 'none';
+        addTrueFalseAnswers();
+    } else if (questionType === 'short_answer') {
+        addAnswerBtn.style.display = 'none';
+        addShortAnswerField();
+    } else {
+        addAnswerBtn.style.display = 'block';
+        addAnswerField();
+        addAnswerField();
+    }
+}
+
+function addAnswerField() {
+    const container = document.getElementById('answersContainer');
+    const currentIndex = container.children.length;
+    const answerDiv = document.createElement('div');
+    answerDiv.className = 'flex items-center space-x-2';
+    answerDiv.innerHTML = `
+        <input type="text" name="answers[]" required placeholder="Answer option"
+               class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="correct[]" value="${currentIndex}"
+                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+            <span class="ml-2 text-sm text-gray-600">Correct</span>
+        </label>
+        <button type="button" onclick="removeAnswerField(this.parentElement)"
+                class="text-red-600 hover:text-red-900">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(answerDiv);
+}
+
+function removeAnswerField(element) {
+    element.remove();
+    // Update indices for remaining answers
+    const container = document.getElementById('answersContainer');
+    Array.from(container.children).forEach((answerDiv, index) => {
+        answerDiv.querySelector('input[name="correct[]"]').value = index;
+    });
+}
+
+
+function addTrueFalseAnswers() {
+    const container = document.getElementById('answersContainer');
+    container.innerHTML = `
+        <div class="space-y-2">
+            <div class="flex items-center space-x-2">
+                <input type="text" name="answers[]" value="True" readonly
+                       class="flex-1 rounded-md border-gray-300 bg-gray-50">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="correct[]" value="0" required
+                           class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-600">Correct</span>
+                </label>
+            </div>
+            <div class="flex items-center space-x-2">
+                <input type="text" name="answers[]" value="False" readonly
+                       class="flex-1 rounded-md border-gray-300 bg-gray-50">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="correct[]" value="1" required
+                           class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-600">Correct</span>
+                </label>
+            </div>
+        </div>
+    `;
+}
+
+function addShortAnswerField() {
+    const container = document.getElementById('answersContainer');
+    container.innerHTML = `
+        <div class="space-y-2">
+            <input type="text" name="answers[]" required placeholder="Correct answer"
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+            <input type="hidden" name="correct[]" value="1">
+        </div>
+    `;
+}
+
+async function editQuestion(questionId) {
+    try {
+        const response = await fetch(`/courses/questions/get/?id=${questionId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch question data');
+        }
+        
+        const data = await response.json();
+        currentQuestionId = questionId;
+        
+        // Update form
+        const form = document.getElementById('questionForm');
+        form.action = `/courses/quiz/${quiz_id}/questions/${questionId}/edit/`;
+        
+        // Update modal title
+        document.getElementById('modalTitle').textContent = 'Edit Question';
+        document.getElementById('submitBtnText').textContent = 'Save Changes';
+        
+        // Set question text
+        const questionInput = document.querySelector('textarea[name="text"]');
+        questionInput.value = data.text;
+        
+        // Hide question type selector and original add answer button
+        document.querySelector('select[name="question_type"]').parentElement.style.display = 'none';
+        document.getElementById('addAnswerBtn').style.display = 'none';
+        
+        // Set up answers
+        const answersContainer = document.getElementById('answersContainer');
+        answersContainer.innerHTML = '';
+        
+        data.answers.forEach((answer, index) => {
+            const answerDiv = document.createElement('div');
+            answerDiv.className = 'flex items-center space-x-2 mb-2';
+            answerDiv.innerHTML = `
+                <input type="text" 
+                       name="options[]" 
+                       value="${answer.text}" 
+                       required 
+                       class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+                <label class="inline-flex items-center">
+                    <input type="radio" 
+                           name="correct_option" 
+                           value="${index}" 
+                           ${answer.is_correct ? 'checked' : ''} 
+                           required
+                           class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-600">Correct</span>
+                </label>
+                ${index > 1 ? `
+                    <button type="button" 
+                            onclick="removeOption(this.parentElement)"
+                            class="text-red-600 hover:text-red-900">
+                        <i class="fas fa-times"></i>
+                    </button>
+                ` : ''}
+            `;
+            answersContainer.appendChild(answerDiv);
+        });
+        
+        // Add "Add Option" button
+        const addOptionBtn = document.createElement('button');
+        addOptionBtn.type = 'button';
+        addOptionBtn.className = 'text-blue-600 hover:text-blue-900 mt-2';
+        addOptionBtn.innerHTML = '<i class="fas fa-plus mr-1"></i>Add Option';
+        addOptionBtn.onclick = addOption;
+        answersContainer.parentElement.insertBefore(addOptionBtn, answersContainer.nextSibling);
+        
+        // Show modal
+        document.getElementById('questionModal').classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to load question data. Please try again.');
+    }
+}
+
+
+
+
+function addOption() {
+    const container = document.getElementById('answersContainer');
+    const currentIndex = container.children.length;
+    
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'flex items-center space-x-2 mb-2';
+    optionDiv.innerHTML = `
+        <input type="text" 
+               name="options[]" 
+               required 
+               placeholder="Answer option"
+               class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+        <label class="inline-flex items-center">
+            <input type="radio" 
+                   name="correct_option" 
+                   value="${currentIndex}" 
+                   required
+                   class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+            <span class="ml-2 text-sm text-gray-600">Correct</span>
+        </label>
+        <button type="button" 
+                onclick="removeOption(this.parentElement)"
+                class="text-red-600 hover:text-red-900">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(optionDiv);
+}
+
+function removeOption(element) {
+    element.remove();
+    // Update indices for remaining options
+    const container = document.getElementById('answersContainer');
+    Array.from(container.children).forEach((optionDiv, index) => {
+        optionDiv.querySelector('input[name="correct_option"]').value = index;
+    });
+}
+
+
+
+document.getElementById('questionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    // Get the question text
+    const questionText = document.querySelector('textarea[name="text"]').value;
+    if (!questionText.trim()) {
+        alert('Question text is required');
+        return;
+    }
+    
+    // Clear existing data
+    formData.delete('options[]');
+    formData.delete('correct_option');
+    formData.delete('text');
+    
+    // Add question text
+    formData.append('question_text', questionText);  // Changed from 'text' to 'question_text'
+    
+    // Get all options and the selected correct answer
+    const options = Array.from(document.querySelectorAll('input[name="options[]"]'))
+        .map((input, index) => ({
+            text: input.value,
+            index: index,
+            isCorrect: document.querySelector(`input[name="correct_option"][value="${index}"]`)?.checked || false
+        }));
+    
+    // Validate at least two options
+    if (options.length < 2) {
+        alert('Please add at least two options');
+        return;
+    }
+    
+    // Validate one correct answer is selected
+    if (!options.some(opt => opt.isCorrect)) {
+        alert('Please select a correct answer');
+        return;
+    }
+    
+    // Add options and correct answer to formData
+    options.forEach(option => {
+        formData.append('options[]', option.text);
+        if (option.isCorrect) {
+            formData.append('correct_option', option.index.toString());
+        }
+    });
+    
+    // Add question type (always multiple choice for now)
+    formData.append('question_type', 'multiple_choice');
+    
+    try {
+        const response = await fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save question');
+        }
+        
+        // Reload the page on success
+        window.location.reload();
+    } catch (error) {
+        console.error('Error saving question:', error);
+        alert(error.message || 'Failed to save question. Please try again.');
+    }
+});
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,196 @@
+<!-- templates/digievolveadmin/student_detail.html -->
+{% extends 'admin_base.html' %}
+
+{% block title %}Student Details - {{ student.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="{% url 'accounts:admin_users' %}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Students List
+        </a>
+    </div>
+
+    <!-- Student Profile Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                {% if student.profile_image %}
+                    <img src="{{ student.profile_image.url }}" alt="{{ student.full_name }}" class="h-24 w-24 rounded-full">
+                {% else %}
+                    <div class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-user text-gray-400 text-4xl"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="ml-6 flex-1">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ student.full_name }}</h1>
+                        <p class="text-gray-600">{{ student.user.email }}</p>
+                        {% if student.phone %}
+                            <p class="text-gray-600">{{ student.phone }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex space-x-3">
+                        <a href="{% url 'accounts:admin_edit_student' student_id=student.id %}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                            <i class="fas fa-edit mr-2"></i>Edit Profile
+                        </a>
+                        <button onclick="confirmDelete('{{ student.id }}', '{{ student.full_name|escapejs }}')"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+                            <i class="fas fa-trash-alt mr-2"></i>Delete Student
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student Stats -->
+                <div class="mt-6 grid grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Total Enrollments</p>
+                        <p class="text-2xl font-semibold">{{ total_enrollments }}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Completed Courses</p>
+                        <p class="text-2xl font-semibold">{{ completed_courses }}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Joined Date</p>
+                        <p class="text-2xl font-semibold">{{ student.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrolled Courses -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Enrolled Courses</h2>
+        {% if enrollments %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Enrollment Date</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for enrollment in enrollments %}
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">{{ enrollment.course.title }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-500">{{ enrollment.enrollment_date|date:"M d, Y" }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if enrollment.is_completed %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Completed
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        In Progress
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <a href="{% url 'courses:course_detail' course_id=enrollment.course.id %}" 
+                                   class="text-blue-600 hover:text-blue-900">
+                                    View Course
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-4">No courses enrolled yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Recent Activities</h2>
+        {% if activities %}
+            <div class="space-y-4">
+                {% for activity in activities %}
+                <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0">
+                        <span class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-clock text-blue-600"></i>
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ activity.description }}</p>
+                        <p class="text-sm text-gray-500">{{ activity.timestamp|date:"M d, Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-center py-4">No recent activities.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            Delete Student
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500" id="deleteConfirmationText">
+                                Are you sure you want to delete this student? This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <form id="deleteForm" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Delete
+                    </button>
+                </form>
+                <button type="button" onclick="closeDeleteModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(studentId, studentName) {
+    const modal = document.getElementById('deleteModal');
+    const deleteForm = document.getElementById('deleteForm');
+    const confirmationText = document.getElementById('deleteConfirmationText');
+    
+    confirmationText.textContent = `Are you sure you want to delete ${studentName}? This action cannot be undone.`;
+    deleteForm.action = `{% url 'accounts:admin_delete_student' student_id=0 %}`.replace('0', studentId);
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+}
+</script>
+{% endblock %}

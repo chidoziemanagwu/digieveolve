@@ -1,0 +1,141 @@
+<!-- templates/admin/base_admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiEvolve Admin - {% block title %}Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-800 text-white">
+            <div class="p-4">
+                <h1 class="text-2xl font-bold">DigiEvolve Admin</h1>
+            </div>
+            <nav class="mt-4">
+                <a href="{% url 'accounts:admin_dashboard' %}" class="block px-4 py-2 hover:bg-gray-700 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-gray-700{% endif %}">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </a>
+                
+                <!-- Courses Management -->
+                <div class="mt-4">
+                    <p class="px-4 text-gray-400 text-sm">COURSES</p>
+                    <a href="{% url 'courses:admin_course_list' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-book mr-2"></i> All Courses
+                    </a>
+                    <a href="{% url 'courses:admin_add_course' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-plus mr-2"></i> Add Course
+                    </a>
+                    <a href="{% url 'courses:admin_modules' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-layer-group mr-2"></i> Modules
+                    </a>
+                    <a href="{% url 'courses:admin_quizzes' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-question-circle mr-2"></i> Quizzes
+                    </a>
+                </div>
+
+                <!-- Users Management -->
+                <div class="mt-4">
+                    <p class="px-4 text-gray-400 text-sm">USERS</p>
+                    <a href="{% url 'accounts:admin_users' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-users mr-2"></i> All Users
+                    </a>
+                    <a href="{% url 'accounts:admin_enrollments' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-user-graduate mr-2"></i> Enrollments
+                    </a>
+                </div>
+
+                <!-- Blog Management -->
+                <div class="mt-4">
+                    <p class="px-4 text-gray-400 text-sm">BLOG</p>
+                    <a href="{% url 'blog:admin_posts' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-blog mr-2"></i> All Posts
+                    </a>
+                    <a href="{% url 'blog:admin_add_post' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-plus mr-2"></i> Add Post
+                    </a>
+                </div>
+
+                <!-- Reports -->
+                <div class="mt-4">
+                    <p class="px-4 text-gray-400 text-sm">REPORTS</p>
+                    <a href="{% url 'accounts:admin_reports' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-chart-bar mr-2"></i> Analytics
+                    </a>
+                    <a href="{% url 'accounts:admin_revenue' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-money-bill mr-2"></i> Revenue
+                    </a>
+                </div>
+
+                <!-- Settings -->
+                <!-- <div class="mt-4">
+                    <p class="px-4 text-gray-400 text-sm">SETTINGS</p>
+                    <a href="{% url 'accounts:admin_settings' %}" class="block px-4 py-2 hover:bg-gray-700">
+                        <i class="fas fa-cog mr-2"></i> Site Settings
+                    </a>
+                </div> -->
+
+                <!-- Resources Management -->
+<div class="mt-4">
+    <p class="px-4 text-gray-400 text-sm">RESOURCES</p>
+    <a href="{% url 'resources:admin_resources' %}" class="block px-4 py-2 hover:bg-gray-700 {% if request.resolver_match.url_name == 'admin_resources' %}bg-gray-700{% endif %}">
+        <i class="fas fa-file-alt mr-2"></i> All Resources
+    </a>
+    <a href="{% url 'resources:admin_add_resource' %}" class="block px-4 py-2 hover:bg-gray-700 {% if request.resolver_match.url_name == 'admin_add_resource' %}bg-gray-700{% endif %}">
+        <i class="fas fa-plus mr-2"></i> Add Resource
+    </a>
+    <a href="{% url 'resources:admin_categories' %}" class="block px-4 py-2 hover:bg-gray-700 {% if request.resolver_match.url_name == 'admin_categories' %}bg-gray-700{% endif %}">
+        <i class="fas fa-folder mr-2"></i> Categories
+    </a>
+</div>
+
+
+<!-- Contact Management -->
+<div class="mt-4">
+    <p class="px-4 text-gray-400 text-sm">CONTACT</p>
+    <a href="{% url 'contact:contact_management' %}" class="block px-4 py-2 hover:bg-gray-700 {% if request.resolver_match.url_name == 'contact_management' %}bg-gray-700{% endif %}">
+        <i class="fas fa-envelope mr-2"></i> Contact Queries
+    </a>
+</div>
+            </nav>
+        </aside>
+
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow">
+                <div class="flex justify-between items-center px-6 py-4">
+                    <h2 class="text-xl font-semibold">{% block header %}Dashboard{% endblock %}</h2>
+                    <div class="flex items-center">
+                        <span class="mr-4">{{ request.user.email }}</span>
+                        <a href="{% url 'accounts:logout' %}" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+                <div class="container mx-auto px-6 py-8">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,275 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Edit User - {{ user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-5xl">
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="{% url 'accounts:admin_view_student' student_id=user.id %}" 
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to User Details
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+            <div class="flex items-center">
+                <div class="bg-white/20 p-3 rounded-full mr-4">
+                    <i class="fas fa-user-edit text-white text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Edit User Profile</h1>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="p-8 space-y-6">
+            {% csrf_token %}
+
+            {% if messages %}
+                <div class="space-y-3">
+                    {% for message in messages %}
+                        <div class="flex p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                            <div class="flex-shrink-0">
+                                <i class="mr-2 {% if message.tags == 'success' %}fas fa-check-circle text-green-400{% elif message.tags == 'error' %}fas fa-exclamation-circle text-red-400{% else %}fas fa-info-circle text-blue-400{% endif %}"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Profile Image Section -->
+            <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Profile Image</h2>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-col sm:flex-row items-center gap-8">
+                        <div class="flex-shrink-0">
+                            {% if user.profile_image %}
+                                <img src="{{ user.profile_image.url }}" alt="Current profile image" 
+                                     class="h-40 w-40 rounded-full object-cover ring-4 ring-white shadow-lg">
+                            {% else %}
+                                <div class="h-40 w-40 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-white shadow-lg">
+                                    <i class="fas fa-user text-gray-400 text-4xl"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload new image</label>
+                            <div class="flex items-center justify-center w-full">
+                                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all duration-200">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-cloud-upload-alt mb-3 text-gray-400 text-2xl"></i>
+                                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                        <p class="text-xs text-gray-500">Recommended: Square image, at least 300x300 pixels</p>
+                                    </div>
+                                    <input type="file" name="profile_image" id="profile_image" class="hidden" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+<!-- Personal Information Section -->
+<div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800">Personal Information</h2>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- First Name -->
+            <div class="relative">
+                <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-400"></i>
+                    </div>
+                    <input type="text" name="first_name" id="first_name" 
+                           value="{{ user.first_name }}" required
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                </div>
+            </div>
+
+            <!-- Last Name -->
+            <div class="relative">
+                <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-400"></i>
+                    </div>
+                    <input type="text" name="last_name" id="last_name" 
+                           value="{{ user.last_name }}" required
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="relative">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-gray-400"></i>
+                    </div>
+                    <input type="email" name="email" id="email" 
+                           value="{{ user.email }}" required
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                </div>
+            </div>
+
+            <!-- Phone -->
+            <div class="relative">
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-phone text-gray-400"></i>
+                    </div>
+                    <input type="tel" name="phone" id="phone" 
+                           value="{{ user.phone }}"
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                </div>
+            </div>
+
+            <!-- Username -->
+            <div class="relative">
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-at text-gray-400"></i>
+                    </div>
+                    <input type="text" name="username" id="username" 
+                           value="{{ user.username }}" required
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                </div>
+            </div>
+
+            <!-- Date Joined (Read Only) -->
+            <div class="relative">
+                <label for="date_joined" class="block text-sm font-medium text-gray-700 mb-2">Date Joined</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-calendar text-gray-400"></i>
+                    </div>
+                    <input type="text" id="date_joined" 
+                           value="{{ user.date_joined|date:'F j, Y' }}" readonly
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed">
+                </div>
+            </div>
+
+            <!-- Last Login (Read Only) -->
+            <div class="relative">
+                <label for="last_login" class="block text-sm font-medium text-gray-700 mb-2">Last Login</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-clock text-gray-400"></i>
+                    </div>
+                    <input type="text" id="last_login" 
+                           value="{{ user.last_login|date:'F j, Y H:i' }}" readonly
+                           class="block w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed">
+                </div>
+            </div>
+
+            <!-- Is Active Status -->
+            <div class="relative col-span-2">
+                <div class="flex items-center">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_active" id="is_active" 
+                               {% if user.is_active %}checked{% endif %}
+                               class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <span class="ml-3 text-sm font-medium text-gray-700">Active Account</span>
+                    </label>
+                    <p class="ml-3 text-sm text-gray-500">Deactivating the account will prevent the user from logging in.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <!-- Account Status Section -->
+            <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Account Status</h2>
+                </div>
+                <div class="p-6 space-y-6">
+                    <!-- Student Status Toggle -->
+                    <div class="flex items-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="is_student" id="is_student" 
+                                   {% if user.is_student %}checked{% endif %}
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">Student Account</span>
+                        </label>
+                    </div>
+
+                    <!-- Admin Type Selection -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Admin Type</label>
+                        <select name="admin_type" id="admin_type" 
+                                class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                            <option value="none" {% if user.admin_type == 'none' %}selected{% endif %}>Not Admin</option>
+                            <option value="super_admin" {% if user.admin_type == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                            <option value="content_admin" {% if user.admin_type == 'content_admin' %}selected{% endif %}>Content Admin</option>
+                            <option value="support_admin" {% if user.admin_type == 'support_admin' %}selected{% endif %}>Support Admin</option>
+                        </select>
+                    </div>
+
+                    <!-- Admin Active Status Toggle -->
+                    <div class="flex items-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="is_active_admin" id="is_active_admin" 
+                                   {% if user.is_active_admin %}checked{% endif %}
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">Active Admin</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bio Section -->
+            <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Biography</h2>
+                </div>
+                <div class="p-6">
+                    <textarea name="bio" id="bio" rows="4"
+                              class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                              placeholder="Enter user biography...">{{ user.bio }}</textarea>
+                    <p class="mt-2 text-sm text-gray-500">Brief description about the user's background, interests, or goals.</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{% url 'accounts:admin_view_student' student_id=user.id %}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                    <i class="fas fa-save mr-2"></i>Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Add custom file input handling
+document.getElementById('profile_image').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name;
+    if (fileName) {
+        const fileInfo = this.parentElement.querySelector('p.text-sm');
+        fileInfo.textContent = `Selected file: ${fileName}`;
+    }
+});
+</script>
+{% endblock %}

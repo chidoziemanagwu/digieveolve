@@ -1,0 +1,501 @@
+{% extends 'admin_base.html' %}
+{% load humanize %}  <!-- Add this line at the top -->
+
+{% block title %}Revenue Management{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/datetime/1.5.1/css/dataTables.dateTime.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .revenue-card {
+        transition: all 0.3s ease;
+    }
+    .revenue-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #E5E7EB;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_length select {
+        border: 1px solid #E5E7EB;
+        border-radius: 0.375rem;
+        padding: 0.25rem;
+    }
+    .no-data-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+        background-color: #f9fafb;
+        border-radius: 0.5rem;
+        border: 2px dashed #e5e7eb;
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Revenue Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-6 revenue-card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-gray-500 text-sm">Total Revenue</h3>
+                    <p class="text-2xl font-bold">₦{{ total_revenue }}</p>
+                    <p class="text-sm text-gray-500">All time earnings</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 revenue-card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-gray-500 text-sm">This Month</h3>
+                    <p class="text-2xl font-bold">₦{{ monthly_revenue|default:"0"|intcomma }}</p>
+                    <p class="text-sm text-gray-500">{{ current_month }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 revenue-card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-gray-500 text-sm">Today</h3>
+                    <p class="text-2xl font-bold">₦{{ daily_revenue|default:"0"|intcomma }}</p>
+                    <p class="text-sm text-gray-500">{{ today|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 revenue-card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div class="ml-5">
+                    <h3 class="text-gray-500 text-sm">Avg. Transaction</h3>
+                    <p class="text-2xl font-bold">₦{{ avg_transaction|default:"0"|intcomma }}</p>
+                    <p class="text-sm text-gray-500">Per payment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Monthly Revenue Trend -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Monthly Revenue Trend</h3>
+            {% if monthly_data and monthly_data|length > 0 %}
+            <div class="chart-container">
+                <canvas id="monthlyRevenueChart"></canvas>
+            </div>
+            {% else %}
+            <div class="no-data-container">
+                <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+                <p class="text-gray-500 text-sm">No revenue data available</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Revenue by Course -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Revenue by Course</h3>
+            {% if course_data and course_data|length > 0 %}
+            <div class="chart-container">
+                <canvas id="courseRevenueChart"></canvas>
+            </div>
+            {% else %}
+            <div class="no-data-container">
+                <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <p class="text-gray-500 text-sm">No course revenue data available</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">Payment History</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <label for="min" class="text-sm font-medium text-gray-600">From:</label>
+                        <input type="date" id="min" name="min" 
+                               class="block w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="max" class="text-sm font-medium text-gray-600">To:</label>
+                        <input type="date" id="max" name="max" 
+                               class="block w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button onclick="clearDates()" 
+                            class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            {% if payments %}
+            <table id="paymentsTable" class="display responsive nowrap w-full">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.reference }}</td>
+                        <td>{{ payment.student.user.get_full_name }}</td>
+                        <td>{{ payment.course.title }}</td>
+                        <td>₦{{ payment.amount|intcomma }}</td>
+                        <td data-order="{{ payment.created_at|date:'Y-m-d' }}">
+                            {{ payment.created_at|date:"M d, Y" }}
+                        </td>
+                        <td>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if payment.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ payment.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="viewPaymentDetails('{{ payment.id }}')"
+                                    class="text-blue-600 hover:text-blue-900">
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No payments found</h3>
+                <p class="mt-1 text-sm text-gray-500">No payment records are available at this time.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden" style="z-index: 1000;">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-900">Payment Details</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6" id="paymentDetails">
+                <!-- Payment details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Required JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/datetime/1.5.1/js/dataTables.dateTime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize Flatpickr date pickers
+        const dateConfig = {
+            enableTime: false,
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                table.draw();
+            }
+        };
+        
+        const startDate = flatpickr("#min", {
+            ...dateConfig,
+            onClose: function(selectedDates, dateStr, instance) {
+                endDate.set('minDate', dateStr);
+            }
+        });
+        
+        const endDate = flatpickr("#max", {
+            ...dateConfig,
+            onClose: function(selectedDates, dateStr, instance) {
+                startDate.set('maxDate', dateStr);
+            }
+        });
+    
+        // Initialize DataTable
+        var table = $('#paymentsTable').DataTable({
+            responsive: true,
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'copy',
+                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
+                },
+                {
+                    extend: 'csv',
+                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
+                },
+                {
+                    extend: 'excel',
+                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
+                },
+                {
+                    extend: 'pdf',
+                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
+                }
+            ],
+            pageLength: 10,
+            order: [[4, 'desc']], // Sort by date by default
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                paginate: {
+                    first: "First",
+                    last: "Last",
+                    next: "Next",
+                    previous: "Previous"
+                },
+                emptyTable: `
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No payments found</h3>
+                        <p class="mt-1 text-sm text-gray-500">No payment records are available for the selected period.</p>
+                    </div>
+                `
+            }
+        });
+    
+
+
+        // Set max date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('min').max = today;
+        document.getElementById('max').max = today;
+
+        // Handle date changes
+        $('#min, #max').on('change', function() {
+            const minDate = $('#min').val();
+            const maxDate = $('#max').val();
+            
+            // If min date is selected, set it as minimum for max date
+            if (minDate) {
+                $('#max').attr('min', minDate);
+            }
+            
+            // If max date is selected, set it as maximum for min date
+            if (maxDate) {
+                $('#min').attr('max', maxDate);
+            }
+            
+            table.draw();
+        });
+
+
+        // Custom filtering function
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var min = $('#min').val() ? moment($('#min').val()) : null;
+                var max = $('#max').val() ? moment($('#max').val()).endOf('day') : null;
+                var date = moment(data[4], 'MMM DD, YYYY');
+
+                if (
+                    (min === null && max === null) ||
+                    (min === null && date <= max) ||
+                    (min <= date && max === null) ||
+                    (min <= date && date <= max)
+                ) {
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        // Add this new function to clear the date filters
+function clearDates() {
+    document.getElementById('min').value = '';
+    document.getElementById('max').value = '';
+    document.getElementById('min').removeAttribute('max');
+    document.getElementById('max').removeAttribute('min');
+    $('#paymentsTable').DataTable().draw();
+}
+
+    // Monthly Revenue Chart
+    const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+    new Chart(monthlyRevenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels|safe }},
+            datasets: [{
+                label: 'Monthly Revenue',
+                data: {{ monthly_data|safe }},
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Course Revenue Chart
+    const courseRevenueCtx = document.getElementById('courseRevenueChart').getContext('2d');
+    new Chart(courseRevenueCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ course_labels|safe }},
+            datasets: [{
+                data: {{ course_data|safe }},
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(139, 92, 246, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+});
+
+// Payment Details Modal
+function viewPaymentDetails(paymentId) {
+    fetch(`/api/payments/${paymentId}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('paymentDetails').innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Reference</h4>
+                        <p class="mt-1">${data.reference}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Student</h4>
+                        <p class="mt-1">${data.student_name}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Course</h4>
+                        <p class="mt-1">${data.course_title}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Amount</h4>
+                        <p class="mt-1">₦${data.amount}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Date</h4>
+                        <p class="mt-1">${data.created_at}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Status</h4>
+                        <p class="mt-1">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${data.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                  data.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                  'bg-red-100 text-red-800'}">
+                                ${data.status}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('paymentModal').classList.remove('hidden');
+        });
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

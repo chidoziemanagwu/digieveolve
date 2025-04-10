@@ -1,24 +1,8 @@
 from django.db import models
-from .models import Course
-from accounts.models import StudentProfile
+from .models import Course, Module
+from accounts.models import User
 import uuid
 
-class Module(models.Model):
-    """Module model to organize course content"""
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='modules')
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    content = models.TextField(blank=True)
-    order = models.PositiveIntegerField(default=0)
-    video_url = models.URLField(blank=True, null=True, help_text="URL to the video content")
-    video_duration = models.IntegerField(blank=True, null=True, help_text="Duration in minutes")
-    has_quiz = models.BooleanField(default=False)
-    
-    class Meta:
-        ordering = ['order']
-    
-    def __str__(self):
-        return f"{self.course.title} - {self.title}"
 
 class Quiz(models.Model):
     title = models.CharField(max_length=255)
@@ -34,6 +18,7 @@ class Quiz(models.Model):
 
     def __str__(self):
         return self.title
+
 
 class Question(models.Model):
     QUESTION_TYPES = (
@@ -51,6 +36,7 @@ class Question(models.Model):
     def __str__(self):
         return f"{self.text[:50]}..."
 
+
 class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     text = models.CharField(max_length=255)
@@ -59,8 +45,9 @@ class Answer(models.Model):
     def __str__(self):
         return self.text
 
+
 class QuizAttempt(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     score = models.FloatField(null=True, blank=True)
     is_passed = models.BooleanField(default=False)
@@ -68,11 +55,12 @@ class QuizAttempt(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.student.user.username} - {self.quiz.title}"
+        return f"{self.student.username} - {self.quiz.title}"
 
     @property
     def is_completed(self):
         return self.completed_at is not None
+
 
 class QuestionResponse(models.Model):
     attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='responses')

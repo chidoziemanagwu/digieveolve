@@ -1,0 +1,535 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Contact Management{% endblock %}
+{% block header %}Contact Management{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+        <div class="flex items-center">
+            <div class="p-4 rounded-full bg-blue-500 bg-opacity-10">
+                <i class="fas fa-envelope text-blue-500 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Queries</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_queries|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+        <div class="flex items-center">
+            <div class="p-4 rounded-full bg-yellow-500 bg-opacity-10">
+                <i class="fas fa-clock text-yellow-500 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Pending</p>
+                <p class="text-2xl font-bold text-gray-900">{{ pending_queries|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+        <div class="flex items-center">
+            <div class="p-4 rounded-full bg-purple-500 bg-opacity-10">
+                <i class="fas fa-spinner text-purple-500 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">In Progress</p>
+                <p class="text-2xl font-bold text-gray-900">{{ in_progress_queries|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+        <div class="flex items-center">
+            <div class="p-4 rounded-full bg-green-500 bg-opacity-10">
+                <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Resolved</p>
+                <p class="text-2xl font-bold text-gray-900">{{ resolved_queries|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+        <div class="flex items-center">
+            <div class="p-4 rounded-full bg-red-500 bg-opacity-10">
+                <i class="fas fa-ban text-red-500 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Spam</p>
+                <p class="text-2xl font-bold text-gray-900">{{ spam_queries|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Timeline Chart -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Queries Timeline</h3>
+        {% if timeline_data %}
+            <div class="h-[300px]"> <!-- Added fixed height container -->
+                <canvas id="timelineChart" class="w-full"></canvas>
+            </div>
+        {% else %}
+            <div class="flex flex-col items-center justify-center py-12">
+                <div class="bg-gray-100 rounded-full p-3 mb-4">
+                    <i class="fas fa-chart-line text-gray-400 text-3xl"></i>
+                </div>
+                <p class="text-gray-500 text-center">No timeline data available</p>
+                <p class="text-sm text-gray-400 mt-1">Query data will appear here once received</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Status Distribution Chart -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Query Status Distribution</h3>
+        {% if status_data %}
+            <div class="h-[300px]"> <!-- Added fixed height container -->
+                <canvas id="statusChart" class="w-full"></canvas>
+            </div>
+        {% else %}
+            <div class="flex flex-col items-center justify-center py-12">
+                <div class="bg-gray-100 rounded-full p-3 mb-4">
+                    <i class="fas fa-chart-pie text-gray-400 text-3xl"></i>
+                </div>
+                <p class="text-gray-500 text-center">No status data available</p>
+                <p class="text-sm text-gray-400 mt-1">Distribution will appear once queries are received</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Queries Table -->
+<div class="bg-white rounded-xl shadow-sm">
+    <div class="p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Contact Queries</h3>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-blue-500 text-white" data-filter="all">
+                    All
+                </button>
+                <button type="button" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="pending">
+                    Pending
+                </button>
+                <button type="button" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="in_progress">
+                    In Progress
+                </button>
+                <button type="button" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="resolved">
+                    Resolved
+                </button>
+            </div>
+        </div>
+
+        {% if queries %}
+        <div class="overflow-x-auto">
+            <table id="queriesTable" class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for query in queries %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ query.created_at|date:"M d, Y" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ query.first_name }} {{ query.last_name }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ query.email }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ query.subject }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if query.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif query.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                {% elif query.status == 'resolved' %}bg-green-100 text-green-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ query.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="viewQuery({{ query.id }})" 
+                                    class="text-blue-600 hover:text-blue-900 font-medium">
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="bg-gray-100 rounded-full p-4 inline-block mb-4">
+                <i class="fas fa-inbox text-gray-400 text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Queries Yet</h3>
+            <p class="text-gray-500 max-w-sm mx-auto">When users submit contact queries, they will appear here for management.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Query Details Modal -->
+<div id="queryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-6 border w-full max-w-2xl shadow-xl rounded-xl bg-white">
+        <div class="flex justify-between items-center pb-4 mb-4 border-b">
+            <h3 class="text-xl font-semibold text-gray-900">Query Details</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500 transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <div class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <p id="modalName" class="text-gray-900 bg-gray-50 rounded-lg p-3"></p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <p id="modalEmail" class="text-gray-900 bg-gray-50 rounded-lg p-3"></p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <p id="modalSubject" class="text-gray-900 bg-gray-50 rounded-lg p-3"></p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <p id="modalMessage" class="text-gray-900 bg-gray-50 rounded-lg p-3 whitespace-pre-wrap"></p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select id="modalStatus" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="spam">Spam</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
+                <textarea id="modalNotes" rows="3" 
+                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Add any internal notes here..."></textarea>
+            </div>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+            <button onclick="closeModal()" 
+                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                Cancel
+            </button>
+            <button onclick="updateQueryStatus()" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Update Query
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let currentQueryId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable with a simpler approach
+    const table = $('#queriesTable').DataTable({
+        responsive: true,
+        order: [[0, 'desc']],
+        pageLength: 10,
+        columnDefs: [
+            { orderable: false, targets: 5 } // Disable ordering on the Actions column
+        ],
+        language: {
+            search: "Search queries:",
+            lengthMenu: "Show _MENU_ entries per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ queries",
+            paginate: {
+                first: '<i class="fas fa-angle-double-left"></i>',
+                previous: '<i class="fas fa-angle-left"></i>',
+                next: '<i class="fas fa-angle-right"></i>',
+                last: '<i class="fas fa-angle-double-right"></i>'
+            }
+        },
+        dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4"lf>rt<"flex flex-col sm:flex-row justify-between items-center mt-4"ip>',
+        initComplete: function() {
+            // Style the length select
+            $('.dataTables_length select').addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5');
+            
+            // Style the search input
+            $('.dataTables_filter input').addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5');
+            
+            // Add search icon
+            $('.dataTables_filter label').html(function(_, html) {
+                return `
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        ${html.replace('Search:', '')}
+                    </div>
+                `;
+            });
+
+            // Style the wrapper
+            $('.dataTables_wrapper').addClass('bg-white rounded-lg shadow-sm p-4');
+            
+            // Style length and filter containers
+            $('.dataTables_length').addClass('mb-4 sm:mb-0');
+            $('.dataTables_filter').addClass('w-full sm:w-auto');
+        }
+    });
+
+    // Add custom styling for pagination on draw
+    table.on('draw', function() {
+        // Style pagination buttons
+        $('.paginate_button').addClass('px-3 py-1 mx-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2');
+        $('.paginate_button.current').addClass('!bg-blue-600 !text-white !border-blue-600 hover:!bg-blue-700');
+        $('.paginate_button.disabled').addClass('opacity-50 cursor-not-allowed');
+        
+        // Style info text
+        $('.dataTables_info').addClass('text-sm text-gray-700 py-2');
+    });
+
+    // Initialize Charts
+    initializeCharts();
+
+    // Add custom search function for status filtering
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        const statusFilter = $('.filter-btn.bg-blue-500').data('filter');
+        if (statusFilter === 'all' || !statusFilter) {
+            return true;
+        }
+        
+        const status = $(table.row(dataIndex).node()).find('td:eq(4) span').text().trim().toLowerCase();
+        return status.includes(statusFilter.toLowerCase());
+    });
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            this.classList.remove('bg-gray-100', 'text-gray-700');
+            this.classList.add('bg-blue-500', 'text-white');
+            
+            // Apply filter
+            table.draw(); // This will trigger our custom search function
+        });
+    });
+});
+
+function initializeCharts() {
+    // Timeline Chart
+    const timelineCtx = document.getElementById('timelineChart')?.getContext('2d');
+    const timelineData = {{ timeline_data|safe|default:'[]' }};
+    
+    if (timelineCtx && timelineData && timelineData.length > 0) {
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: timelineData.map(item => {
+                    // Format date if needed
+                    const date = new Date(item.date);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }),
+                datasets: [{
+                    label: 'Queries',
+                    data: timelineData.map(item => item.count),
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'nearest'
+                }
+            }
+        });
+    }
+
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('statusChart')?.getContext('2d');
+    const statusData = {{ status_data|safe|default:'[]' }};
+    
+    if (statusCtx && statusData && statusData.length > 0) {
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusData.map(item => item.status),
+                datasets: [{
+                    data: statusData.map(item => item.count),
+                    backgroundColor: [
+                        'rgb(234, 179, 8)',   // yellow for pending
+                        'rgb(147, 51, 234)',  // purple for in progress
+                        'rgb(34, 197, 94)',   // green for resolved
+                        'rgb(239, 68, 68)'    // red for spam
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value * 100) / total).toFixed(1);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+}
+
+function viewQuery(queryId) {
+    currentQueryId = queryId;
+    fetch(`/contact/api/queries/${queryId}/`)  // Updated to match your URL pattern
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Query data:', data); // For debugging
+            document.getElementById('modalName').textContent = `${data.first_name} ${data.last_name}`.trim();
+            document.getElementById('modalEmail').textContent = data.email;
+            document.getElementById('modalSubject').textContent = data.subject;
+            document.getElementById('modalMessage').textContent = data.message;
+            document.getElementById('modalStatus').value = data.status;
+            document.getElementById('modalNotes').value = data.admin_notes || '';
+            document.getElementById('queryModal').classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error fetching query details:', error);
+            alert(`Error fetching query details: ${error.message}`);
+        });
+}
+
+function updateQueryStatus() {
+    if (!currentQueryId) return;
+
+    const status = document.getElementById('modalStatus').value;
+    const notes = document.getElementById('modalNotes').value;
+
+    fetch(`/contact/api/queries/${currentQueryId}/update/`, {  // Updated to match your URL pattern
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            status: status,
+            admin_notes: notes
+        })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            throw new Error(data.error || 'Unknown error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating status: ' + error.message);
+    });
+}
+
+function closeModal() {
+    document.getElementById('queryModal').classList.add('hidden');
+    currentQueryId = null;
+}
+
+// Close modal when clicking outside
+document.getElementById('queryModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// Prevent modal close when clicking inside modal content
+document.querySelector('#queryModal > div').addEventListener('click', function(e) {
+    e.stopPropagation();
+});
+</script>
+{% endblock %}

@@ -1,15 +1,14 @@
 # accounts/forms.py
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth.models import User
-from .models import StudentProfile
+from .models import User
 from django.db import transaction
 from django.core.exceptions import ValidationError
 
 class CustomLoginForm(AuthenticationForm):
     # Add this field for Turnstile
     cf_turnstile_response = forms.CharField(required=False)  # Make it not required in the form
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add any custom initialization here
@@ -42,7 +41,7 @@ class StudentRegistrationForm(UserCreationForm):
             'required': 'You must accept the Terms and Conditions to register.'
         }
     )
-    
+
     # Add this field for Turnstile
     cf_turnstile_response = forms.CharField(required=False)  # Make it not required in the form
 
@@ -94,24 +93,11 @@ class StudentRegistrationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
+        user.phone = self.cleaned_data['phone']
+        user.is_student = True
+        user.user_type = 'student'
 
         if commit:
             user.save()
-            # The profile will be created by the signal, but we update it with the phone number
-            profile, created = StudentProfile.objects.get_or_create(
-                user=user,
-                defaults={
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                    'phone': self.cleaned_data['phone']
-                }
-            )
-
-            if not created:
-                # Update existing profile
-                profile.phone = self.cleaned_data['phone']
-                profile.first_name = user.first_name
-                profile.last_name = user.last_name
-                profile.save()
 
         return user

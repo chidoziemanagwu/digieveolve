@@ -1,0 +1,289 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Site Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-card {
+        transition: all 0.2s ease;
+    }
+    .settings-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+    .form-input:focus, .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+            Site Settings
+        </h2>
+        <p class="mt-2 text-lg text-gray-600">
+            Manage your website's configuration and preferences
+        </p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="mb-6 rounded-lg border {% if message.tags == 'success' %}bg-green-50 border-green-200{% else %}bg-red-50 border-red-200{% endif %} p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                {% if message.tags == 'success' %}
+                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% else %}
+                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium {% if message.tags == 'success' %}text-green-800{% else %}text-red-800{% endif %}">
+                    {{ message }}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-8" id="settingsForm">
+        {% csrf_token %}
+        
+        <!-- Settings Navigation -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button type="button" class="tab-button w-1/2 py-4 px-1 text-center border-b-2 border-blue-500 font-medium text-sm text-blue-600 cursor-pointer" data-tab="general">
+                        General Settings
+                    </button>
+                    <button type="button" class="tab-button w-1/2 py-4 px-1 text-center border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer" data-tab="payment">
+                        Payment Settings
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- General Settings -->
+        <div id="general" class="settings-section bg-white rounded-xl shadow-sm p-8 settings-card">
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Site Logo</label>
+                    <div class="flex items-center space-x-6">
+                        <img src="{{ settings.logo_url|default:'/static/images/default-logo.png' }}" 
+                             alt="Site Logo" class="h-16 w-auto rounded-lg shadow">
+                        <div class="flex items-center">
+                            <input type="file" name="site_logo" accept="image/*" class="hidden" id="logo-upload">
+                            <label for="logo-upload" class="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                Change Logo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+                        <input type="text" name="site_name" value="{{ settings.site_name }}" 
+                               class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
+                        <textarea name="site_description" rows="3" 
+                                  class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">{{ settings.site_description }}</textarea>
+                        <p class="mt-1 text-sm text-gray-500">Brief description of your website</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                        <input type="email" name="contact_email" value="{{ settings.contact_email }}"
+                               class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                        <select name="timezone" class="form-select block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="Africa/Lagos" {% if settings.timezone == 'Africa/Lagos' %}selected{% endif %}>Africa/Lagos (GMT+1)</option>
+                            <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC (GMT+0)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Settings -->
+        <div id="payment" class="settings-section hidden bg-white rounded-xl shadow-sm p-8 settings-card">
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                        <select name="currency" class="form-select block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="NGN" {% if settings.currency == 'NGN' %}selected{% endif %}>Nigerian Naira (NGN)</option>
+                            <option value="USD" {% if settings.currency == 'USD' %}selected{% endif %}>US Dollar (USD)</option>
+                            <option value="EUR" {% if settings.currency == 'EUR' %}selected{% endif %}>Euro (EUR)</option>
+                            <option value="GBP" {% if settings.currency == 'GBP' %}selected{% endif %}>British Pound (GBP)</option>
+                        </select>
+                    </div>
+
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Paystack Public Key</label>
+                        <input type="text" name="paystack_public_key" value="{{ settings.paystack_public_key }}"
+                               class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <p class="mt-1 text-sm text-gray-500">Your Paystack public key for payment processing</p>
+                    </div>
+
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Paystack Secret Key</label>
+                        <div class="relative">
+                            <input type="password" name="paystack_secret_key" value="{{ settings.paystack_secret_key }}"
+                                   class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm pr-10">
+                            <button type="button" class="toggle-password absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Your Paystack secret key (keep this secure)</p>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center space-x-3">
+                            <input type="checkbox" name="test_mode" 
+                                   class="form-checkbox h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                   {% if settings.test_mode %}checked{% endif %}>
+                            <span class="text-sm font-medium text-gray-700">Enable Test Mode</span>
+                        </label>
+                        <p class="mt-1 text-sm text-gray-500 ml-8">When enabled, payments will be processed in test mode</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-end space-x-4">
+            <button type="button" onclick="resetForm()" 
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Reset Changes
+            </button>
+            <button type="submit" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab-button');
+    const sections = document.querySelectorAll('.settings-section');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            
+            // Update tab styles
+            tabs.forEach(t => {
+                t.classList.remove('border-blue-500', 'text-blue-600');
+                t.classList.add('border-transparent', 'text-gray-500');
+            });
+            tab.classList.remove('border-transparent', 'text-gray-500');
+            tab.classList.add('border-blue-500', 'text-blue-600');
+            
+            // Show/hide sections
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(target).classList.remove('hidden');
+        });
+    });
+
+    // Toggle password visibility
+    const toggleButtons = document.querySelectorAll('.toggle-password');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+        });
+    });
+
+    // Form reset confirmation
+    window.resetForm = function() {
+        if (confirm('Are you sure you want to reset all changes?')) {
+            document.getElementById('settingsForm').reset();
+        }
+    };
+
+    // Test email settings
+    window.testEmailSettings = function() {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Testing...
+        `;
+
+        // Make API call to test email settings
+        fetch('/api/test-email-settings/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                smtp_host: document.querySelector('[name=smtp_host]').value,
+                smtp_port: document.querySelector('[name=smtp_port]').value,
+                smtp_username: document.querySelector('[name=smtp_username]').value,
+                smtp_password: document.querySelector('[name=smtp_password]').value,
+                smtp_encryption: document.querySelector('[name=smtp_encryption]').value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.success ? 'Email settings test successful!' : 'Email settings test failed: ' + data.error);
+        })
+        .catch(error => {
+            alert('Error testing email settings: ' + error);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    };
+});
+</script>
+{% endblock %}

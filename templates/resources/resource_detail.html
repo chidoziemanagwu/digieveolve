@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <!-- Breadcrumb navigation -->
+        <div class="mb-6 flex items-center text-sm">
+            <a href="{% url 'core:home' %}" class="text-gray-600 hover:text-amber-500">
+                <i class="fas fa-home"></i>
+            </a>
+            <span class="mx-2 text-gray-400">/</span>
+            <a href="{% url 'resources:list' %}" class="text-gray-600 hover:text-amber-500">Resources</a>
+            <span class="mx-2 text-gray-400">/</span>
+            <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-gray-600 hover:text-amber-500">
+                {{ resource.category.title }}
+            </a>
+            <span class="mx-2 text-gray-400">/</span>
+            <span class="text-amber-500">{{ resource.title }}</span>
+        </div>
+        
+        <!-- Resource details -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-10">
+            <div class="p-8">
+                <div class="flex items-center mb-6">
+                    {% if resource.file_type == 'pdf' %}
+                    <div class="bg-red-100 text-red-600 p-4 rounded-lg mr-5">
+                        <i class="fas fa-file-pdf text-3xl"></i>
+                    </div>
+                    {% elif resource.file_type == 'doc' %}
+                    <div class="bg-blue-100 text-blue-600 p-4 rounded-lg mr-5">
+                        <i class="fas fa-file-word text-3xl"></i>
+                    </div>
+                    {% elif resource.file_type == 'code' %}
+                    <div class="bg-green-100 text-green-600 p-4 rounded-lg mr-5">
+                        <i class="fas fa-file-code text-3xl"></i>
+                    </div>
+                    {% else %}
+                    <div class="bg-amber-100 text-amber-600 p-4 rounded-lg mr-5">
+                        <i class="fas fa-file-alt text-3xl"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h1 class="text-3xl font-bold">{{ resource.title }}</h1>
+                        <div class="flex items-center mt-2 text-sm text-gray-500">
+                            <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full mr-3">
+                                {{ resource.get_file_type_display }}
+                            </span>
+                            <span class="flex items-center mr-4">
+                                <i class="fas fa-weight-hanging mr-1"></i> {{ resource.file_size }}
+                            </span>
+                            <span class="flex items-center">
+                                <i class="far fa-clock mr-1"></i> Updated: {{ resource.updated_date|date:"M d, Y" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="prose max-w-none mb-8">
+                    <p class="text-lg text-gray-700">{{ resource.description }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg mb-8">
+                    <h2 class="text-xl font-semibold mb-4">Resource Details</h2>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-gray-600"><strong>Category:</strong> {{ resource.category.title }}</p>
+                            <p class="text-gray-600"><strong>File Type:</strong> {{ resource.get_file_type_display }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600"><strong>File Size:</strong> {{ resource.file_size }}</p>
+                            <p class="text-gray-600"><strong>Last Updated:</strong> {{ resource.updated_date|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center">
+                    <a href="{{ resource.file.url }}" 
+                       class="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition-colors mr-4">
+                        <i class="fas fa-download mr-2"></i> Download Resource
+                    </a>
+                    <a href="{{ resource.file.url }}" target="_blank"
+                       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-eye mr-2"></i> Preview
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related resources -->
+        {% if related_resources %}
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold mb-6">Related Resources</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                {% for related in related_resources %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            {% if related.file_type == 'pdf' %}
+                            <div class="bg-red-100 text-red-600 p-3 rounded-lg mr-4">
+                                <i class="fas fa-file-pdf text-xl"></i>
+                            </div>
+                            {% elif related.file_type == 'doc' %}
+                            <div class="bg-blue-100 text-blue-600 p-3 rounded-lg mr-4">
+                                <i class="fas fa-file-word text-xl"></i>
+                            </div>
+                            {% elif related.file_type == 'code' %}
+                            <div class="bg-green-100 text-green-600 p-3 rounded-lg mr-4">
+                                <i class="fas fa-file-code text-xl"></i>
+                            </div>
+                            {% else %}
+                            <div class="bg-amber-100 text-amber-600 p-3 rounded-lg mr-4">
+                                <i class="fas fa-file-alt text-xl"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="font-semibold">{{ related.title }}</h3>
+                                <p class="text-sm text-gray-500">{{ related.file_size }}</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600 mb-4 text-sm">{{ related.description|truncatewords:15 }}</p>
+                        <a href="{% url 'resources:detail' related.slug %}" class="text-amber-500 hover:text-amber-600 font-medium text-sm">View resource</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

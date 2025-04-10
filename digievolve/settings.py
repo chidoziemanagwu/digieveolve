@@ -12,7 +12,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+from django.contrib.messages import constants as messages
 
+# Load environment variables from .env file
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,12 +25,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_i$$c-5@f8swp^b7tn+x!!l8d*77r5rz8tn#!xznv=7yzni@6@'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 
 
+DEFAULT_ADMIN_EMAIL = os.getenv('DEFAULT_ADMIN_EMAIL')
+DEFAULT_ADMIN_USERNAME = os.getenv('DEFAULT_ADMIN_USERNAME')
+DEFAULT_ADMIN_PASSWORD = os.getenv('DEFAULT_ADMIN_PASSWORD')
 
-
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'error',
+}
 # Application definition
 
 INSTALLED_APPS = [
@@ -36,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
 
     # Third party apps
     'tailwind',
@@ -52,6 +66,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
     'services.apps.ServicesConfig',
+    'contact.apps.ContactConfig',
 ]
 
 # reCAPTCHA settings
@@ -74,21 +89,17 @@ MIDDLEWARE = [
 ]
 
 
-from django.contrib.messages import constants as messages
-MESSAGE_TAGS = {
-    messages.DEBUG: 'bg-gray-100 text-gray-700',
-    messages.INFO: 'bg-blue-100 text-blue-700',
-    messages.SUCCESS: 'bg-green-100 text-green-700',
-    messages.WARNING: 'bg-yellow-100 text-yellow-700',
-    messages.ERROR: 'bg-red-100 text-red-700',
-}
 
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 ROOT_URLCONF = 'digievolve.urls'
+AUTH_USER_MODEL = 'accounts.User'
+
+
 
 # Paystack settings
-PAYSTACK_PUBLIC_KEY = 'pk_test_f75b89d4b0b77d11c41a01491f5b6060862ee616'
-PAYSTACK_SECRET_KEY = 'sk_test_d495b7568946469c62d1cd564d5b24bcec017762'
+PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
 PAYSTACK_SUCCESS_URL = 'courses:payment_success'
 PAYSTACK_FAILED_URL = 'courses:payment_failed'
 
@@ -97,8 +108,8 @@ PAYSTACK_SETTINGS = {
     'PUBLIC_KEY': PAYSTACK_PUBLIC_KEY,
     'SECRET_KEY': PAYSTACK_SECRET_KEY,
     'CALLBACK_URL': PAYSTACK_SUCCESS_URL,
-    'BUTTON_ID': 'paystack-button',  # Default button ID for Paystack
-    'CURRENCY': 'NGN',  # Add this line to specify the currency
+    'BUTTON_ID': 'paystack-button',
+    'CURRENCY': 'NGN',
     'BUTTON_CLASS': 'btn btn-primary',
 }
 
@@ -135,6 +146,8 @@ DATABASES = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -178,7 +191,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-DEBUG = 'RENDER' not in os.environ
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 if DEBUG:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'digievolvehub.com', 'www.digievolvehub.com', 'digieveolve-620934795638.us-central1.run.app']
@@ -209,7 +222,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CLOUDFLARE_TURNSTILE_SECRET_KEY = '0x4AAAAAAA_PrYbgupT5euhBSvuwBQzu0h0'
-CLOUDFLARE_TURNSTILE_SITE_KEY = '0x4AAAAAAA_PrbdWkaPF_0vd'
+CLOUDFLARE_TURNSTILE_SITE_KEY = os.getenv('CLOUDFLARE_TURNSTILE_SITE_KEY')
+CLOUDFLARE_TURNSTILE_SECRET_KEY = os.getenv('CLOUDFLARE_TURNSTILE_SECRET_KEY')
 
 TEMPLATES[0]['OPTIONS']['context_processors'].append('accounts.context_processors.settings_context')

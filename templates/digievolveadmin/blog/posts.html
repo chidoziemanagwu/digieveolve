@@ -1,0 +1,221 @@
+<!-- templates/admin/blog/posts.html -->
+{% extends 'admin_base.html' %}
+
+{% block title %}Blog Management{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-semibold">Blog Posts</h2>
+                <p class="text-gray-600">Manage your blog content</p>
+            </div>
+            <a href="{% url 'blog:admin_add_post' %}" 
+               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Add New Post
+            </a>
+        </div>
+    </div>
+
+    <!-- Posts List -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <!-- Filters -->
+            <div class="mb-6 flex space-x-4">
+                <div class="flex-1">
+                    <input type="text" placeholder="Search posts..." 
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                           id="searchInput">
+                </div>
+                <select class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                        id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                </select>
+                <select class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                        id="categoryFilter">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if posts %}
+            <!-- Posts Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Author</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for post in posts %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    {% if post.featured_image %}
+                                    <div class="flex-shrink-0 h-10 w-10 mr-3">
+                                        <img class="h-10 w-10 rounded-full object-cover" 
+                                             src="{{ post.featured_image.url }}" 
+                                             alt="{{ post.title }}">
+                                    </div>
+                                    {% endif %}
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ post.title }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ post.excerpt|truncatechars:100 }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ post.author.get_full_name|default:post.author.username }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    {{ post.category.name }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                           {% if post.status == 'published' %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ post.status|title }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ post.published_date|date:"M d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex space-x-3">
+                                    <a href="{% url 'blog:admin_edit_post' post.slug %}" 
+                                       class="text-blue-600 hover:text-blue-900">Edit</a>
+                                    <button onclick="togglePostStatus('{{ post.id }}')"
+                                            class="text-yellow-600 hover:text-yellow-900">
+                                        {% if post.status == 'published' %}Unpublish{% else %}Publish{% endif %}
+                                    </button>
+                                    <button onclick="deletePost('{{ post.id }}')"
+                                            class="text-red-600 hover:text-red-900">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- No Posts Message -->
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No posts yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating your first blog post.</p>
+                <div class="mt-6">
+                    <a href="{% url 'blog:admin_add_post' %}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Create New Post
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Pagination (only show if there are posts) -->
+            {% if posts and is_paginated %}
+            <div class="mt-4 flex justify-between items-center">
+                <div class="text-sm text-gray-700">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} posts
+                </div>
+                <div class="space-x-2">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" 
+                       class="px-3 py-1 border rounded-md hover:bg-gray-50">Previous</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" 
+                       class="px-3 py-1 border rounded-md hover:bg-gray-50">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search and Filter Functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchQuery = e.target.value;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('search', searchQuery);
+    window.location.href = currentUrl.toString();
+});
+
+document.getElementById('statusFilter').addEventListener('change', function(e) {
+    const status = e.target.value;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('status', status);
+    window.location.href = currentUrl.toString();
+});
+
+document.getElementById('categoryFilter').addEventListener('change', function(e) {
+    const category = e.target.value;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('category', category);
+    window.location.href = currentUrl.toString();
+});
+
+// Post Management Functions
+function togglePostStatus(postId) {
+    if (confirm('Are you sure you want to change the status of this post?')) {
+        fetch(`/blog/digievolveadmin/posts/${postId}/toggle-status/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error changing post status');
+            }
+        });
+    }
+}
+
+function deletePost(postId) {
+    if (confirm('Are you sure you want to delete this post?')) {
+        fetch(`/blog/digievolveadmin/posts/${postId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error deleting post');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

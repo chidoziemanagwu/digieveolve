@@ -8,6 +8,7 @@ from django.contrib import messages  # Add this import
 from .services_data import services_data
 from .training_programs_data import training_programs_data
 from .models import NewsletterSubscriber
+from contact.models import Contact  # Import the Contact model from your contact app
 
 
 
@@ -35,16 +36,60 @@ def about(request):
     return render(request, 'pages/about.html', {'tools': tools})
 
 def contact(request):
+    """Contact form view"""
+    print(f"\n\n==== CONTACT VIEW: {request.method} ====")
+    print(f"Path: {request.path}")
+
     if request.method == 'POST':
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            # Process the form data
-            # Add your email sending logic here
-            messages.success(request, 'Your message has been sent successfully!')
-            return redirect('core:contact')
-    else:
-        form = ContactForm()
-    return render(request, 'pages/contact.html', {'form': form})
+        print("POST Data received:", request.POST)
+
+        try:
+            # Get form data
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+            subject = request.POST.get('subject', '').strip()
+            message = request.POST.get('message', '').strip()
+
+            print(f"Processing form data: {first_name=}, {last_name=}, {email=}, {subject=}")
+
+            # Validate required fields
+            if not all([first_name, last_name, email, subject, message]):
+                missing = []
+                if not first_name: missing.append("First name")
+                if not last_name: missing.append("Last name")
+                if not email: missing.append("Email")
+                if not subject: missing.append("Subject")
+                if not message: missing.append("Message")
+
+                messages.error(request, f"Please fill in all required fields: {', '.join(missing)}")
+                return render(request, 'pages/contact.html')
+
+            # Save to database
+            contact = Contact.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                subject=subject,
+                message=message,
+                status='pending'
+            )
+
+            print(f"Contact saved successfully with ID: {contact.id}")
+
+            # Add success message
+            messages.success(request, "Thank you! Your message has been sent successfully.")
+
+            # Render the same page with success message
+            return render(request, 'pages/contact.html')
+
+        except Exception as e:
+            print(f"Error saving contact: {str(e)}")
+            messages.error(request, f"An error occurred: {str(e)}")
+            return render(request, 'pages/contact.html')
+
+    # For GET requests, just render the template
+    return render(request, 'pages/contact.html')
 
 
 def services_page(request):

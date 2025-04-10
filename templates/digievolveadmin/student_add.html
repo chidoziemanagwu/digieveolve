@@ -1,0 +1,240 @@
+<!-- templates/digievolveadmin/student_add.html -->
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Add New Student{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-5xl">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Add New Student</h1>
+            <p class="mt-2 text-sm text-gray-600">Create a new student account with complete profile information.</p>
+        </div>
+        <a href="{% url 'accounts:admin_users' %}" 
+           class="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>Back to Students</span>
+        </a>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Form Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+            <h2 class="text-white text-lg font-semibold">Student Information</h2>
+            <p class="text-blue-100 text-sm">All fields marked with * are required</p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-6 p-4 rounded-lg {{ message.tags }} animate-fade-in">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Profile Image Upload Section -->
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <div class="text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-user-circle text-4xl text-gray-400"></i>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="text-sm font-medium text-gray-900">Profile Photo</h3>
+                        <p class="text-xs text-gray-500 mt-1">PNG, JPG or GIF up to 2MB</p>
+                    </div>
+                    <label class="cursor-pointer">
+                        <input type="file" name="profile_image" id="profile_image" class="hidden" 
+                               accept="image/*" onchange="showPreview(event)">
+                        <span class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md 
+                                   shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none 
+                                   focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-upload mr-2"></i>
+                            Choose File
+                        </span>
+                    </label>
+                    <div id="image-preview" class="mt-4 hidden">
+                        <img src="" alt="Preview" class="mx-auto h-32 w-32 rounded-full object-cover">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Personal Information Section -->
+                <div class="space-y-6">
+                    <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Personal Details</h3>
+                    
+                    <!-- First Name -->
+                    <div class="form-group">
+                        <label for="first_name" class="block text-sm font-medium text-gray-700">
+                            First Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input type="text" name="first_name" id="first_name" required
+                                   class="pl-10 block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                          focus:border-blue-500 transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="form-group">
+                        <label for="last_name" class="block text-sm font-medium text-gray-700">
+                            Last Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input type="text" name="last_name" id="last_name" required
+                                   class="pl-10 block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                          focus:border-blue-500 transition-colors">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information Section -->
+                <div class="space-y-6">
+                    <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Contact Information</h3>
+                    
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email" class="block text-sm font-medium text-gray-700">
+                            Email Address <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-gray-400"></i>
+                            </div>
+                            <input type="email" name="email" id="email" required
+                                   class="pl-10 block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                          focus:border-blue-500 transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+                        <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-phone text-gray-400"></i>
+                            </div>
+                            <input type="tel" name="phone" id="phone"
+                                   class="pl-10 block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                          focus:border-blue-500 transition-colors">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Section -->
+                <div class="col-span-2">
+                    <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-6">Security</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label for="password" class="block text-sm font-medium text-gray-700">
+                                Password <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                </div>
+                                <input type="password" name="password" id="password" required
+                                       class="pl-10 block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                              focus:border-blue-500 transition-colors">
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="form-group">
+                            <label for="confirm_password" class="block text-sm font-medium text-gray-700">
+                                Confirm Password <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                </div>
+                                <input type="password" name="confirm_password" id="confirm_password" required
+                                       class="pl-10 block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                              focus:border-blue-500 transition-colors">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bio Section -->
+                <div class="col-span-2">
+                    <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-6">Additional Information</h3>
+                    <div class="form-group">
+                        <label for="bio" class="block text-sm font-medium text-gray-700">Biography</label>
+                        <div class="mt-1">
+                            <textarea name="bio" id="bio" rows="4"
+                                      class="block w-full rounded-md border-gray-300 focus:ring-blue-500 
+                                             focus:border-blue-500 transition-colors"
+                                      placeholder="Write a brief description about the student..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'accounts:admin_users' %}"
+                       class="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium 
+                              text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 
+                              focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                            class="px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium 
+                                   text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 
+                                   focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Create Student Account
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showPreview(event) {
+    if (event.target.files.length > 0) {
+        const src = URL.createObjectURL(event.target.files[0]);
+        const preview = document.getElementById("image-preview");
+        const previewImage = preview.querySelector("img");
+        previewImage.src = src;
+        preview.classList.remove("hidden");
+    }
+}
+</script>
+
+<style>
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-group:focus-within label {
+    color: #2563eb; /* blue-600 */
+}
+
+.form-group input:focus::placeholder,
+.form-group textarea:focus::placeholder {
+    color: #93c5fd; /* blue-300 */
+}
+</style>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Edit Post - {{ post.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* TinyMCE Custom Styles */
+    .tox-tinymce {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.375rem !important;
+    }
+
+    .tox .tox-toolbar__primary {
+        background: #f8fafc !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding: 0.5rem !important;
+    }
+
+    .tox .tox-edit-area__iframe {
+        background: #ffffff !important;
+    }
+
+    .tox .tox-toolbar__group {
+        border: none !important;
+        padding: 0 0.25rem !important;
+    }
+
+    .tox .tox-tbtn {
+        border-radius: 0.25rem !important;
+        color: #4b5563 !important;
+    }
+
+    .tox .tox-tbtn:hover {
+        background: #e2e8f0 !important;
+    }
+
+    .tox .tox-tbtn--enabled, 
+    .tox .tox-tbtn--enabled:hover {
+        background: #e2e8f0 !important;
+        color: #2563eb !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+                    <a href="{% url 'blog:admin_posts' %}" class="hover:text-blue-600">Blog Posts</a>
+                    <span>/</span>
+                    <span class="text-gray-900">Edit Post</span>
+                </div>
+                <h2 class="text-xl font-semibold">Edit Post: {{ post.title }}</h2>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="submitForm('draft')" 
+                        class="px-4 py-2 border rounded-md hover:bg-gray-50 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                    </svg>
+                    Save as Draft
+                </button>
+                <button type="button" onclick="submitForm('published')" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Publish Post
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Form Column -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow">
+                <form method="POST" enctype="multipart/form-data" id="postForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" id="postStatus" value="{{ post.status }}">
+                    <div class="p-6 space-y-6">
+                        <!-- Title -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title*</label>
+                            <input type="text" name="title" value="{{ post.title }}" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                                   placeholder="Enter post title">
+                        </div>
+
+                        <!-- Excerpt -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Excerpt*</label>
+                            <textarea name="excerpt" rows="3" required
+                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                                      placeholder="Write a brief summary of your post">{{ post.excerpt }}</textarea>
+                        </div>
+
+                        <!-- Content -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Content*</label>
+                            <textarea id="editor" name="content">{{ post.content|safe }}</textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Category Selection -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Category</h3>
+                <select name="category" form="postForm" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+                    <option value="">Select a category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if post.category_id == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Featured Image -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Featured Image</h3>
+                <div id="imagePreview" class="{% if not post.featured_image %}hidden{% endif %} mb-4">
+                    <div class="relative group">
+                        <img src="{% if post.featured_image %}{{ post.featured_image.url }}{% endif %}" 
+                             class="w-full h-48 object-cover rounded-md"
+                             alt="Featured image preview">
+                        <button type="button" onclick="removeFeaturedImage()"
+                                class="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" 
+                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="flex text-sm text-gray-600">
+                            <label for="featured_image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                                <span>Upload a file</span>
+                                <input id="featured_image" name="featured_image" type="file" class="sr-only" 
+                                       accept="image/*" form="postForm" onchange="previewImage(this)">
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- TinyMCE -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.2/tinymce.min.js"></script>
+<script>
+tinymce.init({
+    selector: '#editor',
+    height: 500,
+    menubar: true,
+    plugins: [
+        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+        'insertdatetime', 'media', 'table', 'wordcount'
+    ],
+    toolbar: [
+        'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor',
+        'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
+        'link image media table | removeformat code fullscreen'
+    ],
+    content_style: `
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #374151;
+            margin: 1rem;
+        }
+    `
+});
+
+// Form submission
+function submitForm(status) {
+    const form = document.getElementById('postForm');
+    document.getElementById('postStatus').value = status;
+    
+    // Validate form
+    if (!form.title.value.trim()) {
+        alert('Please enter a title');
+        form.title.focus();
+        return;
+    }
+    if (!form.excerpt.value.trim()) {
+        alert('Please enter an excerpt');
+        form.excerpt.focus();
+        return;
+    }
+    if (!form.category.value) {
+        alert('Please select a category');
+        form.category.focus();
+        return;
+    }
+    
+    // Get editor content
+    const content = tinymce.get('editor').getContent();
+    if (!content || content.trim() === '') {
+        alert('Please enter some content');
+        tinymce.get('editor').focus();
+        return;
+    }
+
+    form.submit();
+}
+
+// Image preview functionality
+function previewImage(input) {
+    const previewDiv = document.getElementById('imagePreview');
+    const previewImg = previewDiv.querySelector('img');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewDiv.classList.remove('hidden');
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeFeaturedImage() {
+    const previewDiv = document.getElementById('imagePreview');
+    const previewImg = previewDiv.querySelector('img');
+    const fileInput = document.getElementById('featured_image');
+    
+    fileInput.value = '';
+    previewDiv.classList.add('hidden');
+    previewImg.src = '';
+}
+</script>
+{% endblock %}

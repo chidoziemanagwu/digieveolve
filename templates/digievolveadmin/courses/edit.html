@@ -1,0 +1,333 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Edit Course{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-8">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">Edit Course</h2>
+                <a href="{% url 'courses:admin_course_list' %}" 
+                   class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data" class="space-y-6" id="courseForm">
+                {% csrf_token %}
+                
+                <!-- Course Title -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Course Title *</label>
+                    <input type="text" name="title" required value="{{ course.title }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                </div>
+
+                <!-- Short Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Short Description *</label>
+                    <input type="text" name="short_description" required
+                           value="{{ course.short_description }}"
+                           placeholder="A brief summary of the course (max 200 characters)"
+                           maxlength="200"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                </div>
+
+                <!-- Full Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Description *</label>
+                    <div class="border border-gray-300 rounded-md overflow-hidden">
+                        <!-- Simple formatting toolbar -->
+                        <div class="bg-gray-50 p-2 border-b border-gray-300 flex gap-2">
+                            <button type="button" onclick="formatText('bold')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-bold"></i>
+                            </button>
+                            <button type="button" onclick="formatText('italic')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-italic"></i>
+                            </button>
+                            <button type="button" onclick="formatText('underline')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-underline"></i>
+                            </button>
+                            <div class="border-l border-gray-300 mx-2"></div>
+                            <button type="button" onclick="formatText('insertUnorderedList')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-list-ul"></i>
+                            </button>
+                            <button type="button" onclick="formatText('insertOrderedList')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-list-ol"></i>
+                            </button>
+                            <div class="border-l border-gray-300 mx-2"></div>
+                            <button type="button" onclick="formatText('createLink')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-link"></i>
+                            </button>
+                        </div>
+                        <!-- Editable content area -->
+                        <div id="editor" contenteditable="true" 
+                             class="w-full p-4 min-h-[200px] focus:outline-none">{{ course.description|safe }}</div>
+                        <input type="hidden" name="description" id="description">
+                    </div>
+                </div>
+
+                <!-- Price and Duration Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Price (₦) *</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₦</span>
+                            <input type="number" name="price" step="0.01" required min="0"
+                                   value="{{ course.price }}"
+                                   class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (hours) *</label>
+                        <input type="number" name="duration" step="0.5" required min="0.5"
+                               value="{{ course.duration }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                    </div>
+                </div>
+
+                <!-- Level and Image Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Level *</label>
+                        <select name="level" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                            <option value="">Select Level</option>
+                            <option value="beginner" {% if course.level == 'beginner' %}selected{% endif %}>Beginner</option>
+                            <option value="intermediate" {% if course.level == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                            <option value="advanced" {% if course.level == 'advanced' %}selected{% endif %}>Advanced</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Course Image</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div class="space-y-1 text-center" id="imagePreviewContainer">
+                                {% if course.image %}
+                                    <img src="{{ course.image.url }}" alt="{{ course.title }}" class="mt-2 rounded-lg w-full h-32 object-cover">
+                                {% else %}
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                {% endif %}
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="thumbnail" class="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-amber-500">
+                                        <span>Change image</span>
+                                        <input id="thumbnail" name="thumbnail" type="file" accept="image/*" class="sr-only">
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course Options -->
+                <div class="bg-gray-50 p-4 rounded-md space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" name="is_free" id="is_free"
+                               {% if course.is_free %}checked{% endif %}
+                               class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded">
+                        <label for="is_free" class="text-sm text-gray-900">
+                            This is a free course
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end pt-6">
+                    <button type="submit" 
+                            class="px-6 py-3 bg-amber-600 text-white rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                        Update Course
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Include the same JavaScript as in add.html -->
+<script>
+    // Text formatting functions with improved handling
+    function formatText(command, value = null) {
+        if (command === 'createLink') {
+            const url = prompt('Enter the URL:');
+            if (url) {
+                // Ensure URL has http:// or https://
+                const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
+                document.execCommand(command, false, formattedUrl);
+            }
+        } else {
+            document.execCommand(command, false, value);
+        }
+        document.getElementById('editor').focus();
+    }
+
+    // Handle form submission with improved validation
+    document.getElementById('courseForm').addEventListener('submit', function(e) {
+        // Get content from editor and store in hidden input
+        let editorContent = document.getElementById('editor').innerHTML;
+        
+        // Remove placeholder text if it exists
+        if (editorContent.includes('Write your course description here...')) {
+            editorContent = '';
+        }
+        
+        // Basic validation
+        if (!editorContent.trim() || editorContent === '<br>' || editorContent === '<div><br></div>') {
+            e.preventDefault();
+            alert('Please enter a course description');
+            return;
+        }
+
+        // Store the content
+        document.getElementById('description').value = editorContent;
+    });
+
+    // Preview uploaded image
+    document.getElementById('thumbnail').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file size (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const container = document.getElementById('imagePreviewContainer');
+                const existingPreview = container.querySelector('img');
+                if (existingPreview) {
+                    existingPreview.src = e.target.result;
+                } else {
+                    const preview = document.createElement('img');
+                    preview.src = e.target.result;
+                    preview.className = 'mt-2 rounded-lg w-full h-32 object-cover';
+                    container.appendChild(preview);
+                }
+                // Hide the SVG icon when an image is selected
+                const svg = container.querySelector('svg');
+                if (svg) svg.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Handle free course checkbox
+    document.getElementById('is_free').addEventListener('change', function(e) {
+        const priceInput = document.querySelector('input[name="price"]');
+        priceInput.disabled = e.target.checked;
+        if (e.target.checked) {
+            priceInput.value = '0';
+        }
+    });
+
+    // Initialize editor with improved placeholder handling
+    const editor = document.getElementById('editor');
+    
+    // Function to handle placeholder
+    function handlePlaceholder() {
+        if (editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
+            editor.innerHTML = '<div class="text-gray-400">Write your course description here...</div>';
+        }
+    }
+
+    // Set initial placeholder
+    handlePlaceholder();
+
+    // Handle focus events
+    editor.addEventListener('focus', function() {
+        if (this.innerHTML.includes('Write your course description here...')) {
+            this.innerHTML = '';
+        }
+    });
+
+    editor.addEventListener('blur', handlePlaceholder);
+
+    // Prevent default behavior of enter key to maintain proper formatting
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.execCommand('insertParagraph', false);
+        }
+    });
+
+    // Handle paste to strip formatting
+    editor.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
+
+    // Add keyboard shortcuts
+    editor.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key.toLowerCase()) {
+                case 'b':
+                    e.preventDefault();
+                    formatText('bold');
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    formatText('italic');
+                    break;
+                case 'u':
+                    e.preventDefault();
+                    formatText('underline');
+                    break;
+            }
+        }
+    });
+</script>
+
+<style>
+    #editor:empty:before {
+        content: attr(placeholder);
+        color: #9CA3AF;
+    }
+    #editor:focus {
+        outline: none;
+    }
+    /* Add styles for lists */
+    #editor ul {
+        list-style-type: disc;
+        margin-left: 1.5em;
+        margin-bottom: 1em;
+    }
+    #editor ol {
+        list-style-type: decimal;
+        margin-left: 1.5em;
+        margin-bottom: 1em;
+    }
+    #editor li {
+        margin-bottom: 0.5em;
+    }
+    /* Add styles for links */
+    #editor a {
+        color: #d97706;
+        text-decoration: underline;
+    }
+    #editor a:hover {
+        color: #b45309;
+    }
+    /* Improve paragraph spacing */
+    #editor p {
+        margin-bottom: 1em;
+    }
+</style>
+{% endblock %}

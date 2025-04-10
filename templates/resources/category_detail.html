@@ -25,10 +25,17 @@
         <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-10">
             <!-- Hero section with image -->
             <div class="relative h-72 md:h-96">
+                {% if resource_category.image %}
                 <img src="{{ resource_category.image.url }}" 
                      alt="{{ resource_category.title }}" 
                      class="absolute inset-0 h-full w-full object-cover"
                      onerror="this.src=resourcePlaceholderUrl; this.onerror='';">
+                {% else %}
+                <img src="{% static 'images/learning-resources.jpg' %}" 
+                     alt="{{ resource_category.title }}" 
+                     class="absolute inset-0 h-full w-full object-cover"
+                     onerror="this.src=resourcePlaceholderUrl; this.onerror='';">
+                {% endif %}
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/70 to-transparent"></div>
                 <div class="absolute bottom-0 left-0 p-8 z-10">
                     <span class="bg-amber-100 text-amber-800 text-xs font-medium px-3 py-1.5 rounded-full mb-3 inline-block">
@@ -42,31 +49,6 @@
             <!-- Description section -->
             <div class="p-6 md:p-8">
                 <p class="text-gray-700 mb-10 text-lg leading-relaxed">{{ resource_category.description }}</p>
-                
-                <!-- Featured video section (placeholder) -->
-                <div class="mb-12 bg-gray-100 rounded-xl p-6">
-                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
-                        <i class="fas fa-play-circle text-amber-500 mr-2"></i> Featured Tutorial
-                    </h2>
-                    <div class="rounded-lg overflow-hidden bg-gray-200 shadow-md">
-                        <!-- Video placeholder with play button overlay -->
-                        <div class="relative" style="padding-top: 56.25%;">  <!-- 16:9 Aspect Ratio -->
-                            <img src="{% static 'img/video-placeholder.jpg' %}" 
-                                 alt="Tutorial video placeholder" 
-                                 class="absolute top-0 left-0 w-full h-full object-cover"
-                                 onerror="this.src='https://placehold.co/1280x720/e2e8f0/94a3b8?text=Tutorial+Video'; this.onerror='';">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="bg-amber-500 hover:bg-amber-600 text-white rounded-full w-16 h-16 flex items-center justify-center cursor-pointer transition-all transform hover:scale-110">
-                                    <i class="fas fa-play text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-3 p-3 text-center">
-                            <h3 class="font-medium">Introduction to {{ resource_category.title }}</h3>
-                            <p class="text-sm text-gray-500">Learn the fundamentals in this comprehensive guide</p>
-                        </div>
-                    </div>
-                </div>
                 
                 <!-- Resources list -->
                 <h2 class="text-2xl font-semibold mb-6 flex items-center">
@@ -113,7 +95,7 @@
                                        class="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors">
                                         <i class="fas fa-download mr-2"></i> Download
                                     </a>
-                                    <a href="#" 
+                                    <a href="{{ resource.file.url }}" target="_blank" 
                                        class="inline-flex items-center text-gray-600 hover:text-amber-500 px-4 py-2 ml-2 transition-colors">
                                         <i class="fas fa-eye mr-2"></i> Preview
                                     </a>
@@ -136,46 +118,25 @@
                 <div class="mt-12 pt-8 border-t border-gray-100">
                     <h2 class="text-2xl font-semibold mb-6">Related Categories</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- These would ideally be dynamically generated -->
-                        <a href="#" class="group">
+                        {% for category in related_categories %}
+                        <a href="{% url 'resources:category_detail' category.slug %}" class="group">
                             <div class="bg-gray-100 group-hover:bg-amber-50 rounded-lg p-5 transition-all">
                                 <div class="flex items-center">
                                     <div class="bg-amber-100 text-amber-600 p-3 rounded-lg mr-4">
-                                        <i class="fas fa-laptop-code text-xl"></i>
+                                        <i class="fas {% if category.category_type == 'technical' %}fa-laptop-code{% elif category.category_type == 'career' %}fa-briefcase{% else %}fa-flask{% endif %} text-xl"></i>
                                     </div>
                                     <div>
-                                        <h3 class="font-medium group-hover:text-amber-500 transition-colors">Web Development</h3>
-                                        <p class="text-sm text-gray-500">12 resources</p>
+                                        <h3 class="font-medium group-hover:text-amber-500 transition-colors">{{ category.title }}</h3>
+                                        <p class="text-sm text-gray-500">{{ category.resources.count }} resources</p>
                                     </div>
                                 </div>
                             </div>
                         </a>
-                        <a href="#" class="group">
-                            <div class="bg-gray-100 group-hover:bg-amber-50 rounded-lg p-5 transition-all">
-                                <div class="flex items-center">
-                                    <div class="bg-amber-100 text-amber-600 p-3 rounded-lg mr-4">
-                                        <i class="fas fa-chart-line text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-medium group-hover:text-amber-500 transition-colors">Data Science</h3>
-                                        <p class="text-sm text-gray-500">8 resources</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                        <a href="#" class="group">
-                            <div class="bg-gray-100 group-hover:bg-amber-50 rounded-lg p-5 transition-all">
-                                <div class="flex items-center">
-                                    <div class="bg-amber-100 text-amber-600 p-3 rounded-lg mr-4">
-                                        <i class="fas fa-mobile-alt text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-medium group-hover:text-amber-500 transition-colors">Mobile Development</h3>
-                                        <p class="text-sm text-gray-500">5 resources</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
+                        {% empty %}
+                        <div class="col-span-3 text-center py-6">
+                            <p class="text-gray-500">No related categories available.</p>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

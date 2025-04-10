@@ -1,0 +1,206 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Resources Management{% endblock %}
+{% block header %}Resources Management{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-semibold">All Resources</h3>
+        <a href="{% url 'resources:admin_add_resource' %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+            <i class="fas fa-plus mr-2"></i> Add New Resource
+        </a>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="mb-6">
+        <form method="get" class="flex flex-wrap gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <input type="text" name="search" placeholder="Search resources..." value="{{ request.GET.search|default:'' }}"
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="w-48">
+                <select name="category" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"i" %}selected{% endif %}>
+                        {{ category.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-48">
+                <select name="file_type" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All File Types</option>
+                    {% for type_value, type_name in file_types %}
+                    <option value="{{ type_value }}" {% if request.GET.file_type == type_value %}selected{% endif %}>
+                        {{ type_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg">
+                <i class="fas fa-search mr-2"></i> Filter
+            </button>
+            {% if request.GET.search or request.GET.category or request.GET.file_type %}
+            <a href="{% url 'resources:admin_resources' %}" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg">
+                <i class="fas fa-times mr-2"></i> Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Resources Table -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white rounded-lg">
+            <thead>
+                <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">Title</th>
+                    <th class="py-3 px-6 text-left">Category</th>
+                    <th class="py-3 px-6 text-center">File Type</th>
+                    <th class="py-3 px-6 text-center">Size</th>
+                    <th class="py-3 px-6 text-center">Last Updated</th>
+                    <th class="py-3 px-6 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm">
+                {% for resource in resources %}
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-6 text-left">
+                        <div class="flex items-center">
+                            <div class="mr-2">
+                                {% if resource.file_type == 'pdf' %}
+                                <i class="fas fa-file-pdf text-red-500"></i>
+                                {% elif resource.file_type == 'doc' %}
+                                <i class="fas fa-file-word text-blue-500"></i>
+                                {% elif resource.file_type == 'code' %}
+                                <i class="fas fa-file-code text-green-500"></i>
+                                {% else %}
+                                <i class="fas fa-file-alt text-amber-500"></i>
+                                {% endif %}
+                            </div>
+                            <span>{{ resource.title }}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-6 text-left">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                            {{ resource.category.title }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        {{ resource.get_file_type_display }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        {{ resource.file_size }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        {{ resource.updated_date|date:"M d, Y" }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        <div class="flex item-center justify-center">
+                            <a href="{{ resource.file.url }}" target="_blank" class="w-4 mr-4 transform hover:text-blue-500 hover:scale-110">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'resources:admin_edit_resource' resource.id %}" class="w-4 mr-4 transform hover:text-yellow-500 hover:scale-110">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button onclick="confirmDelete('{{ resource.id }}', '{{ resource.title|escapejs }}')" class="w-4 transform hover:text-red-500 hover:scale-110">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-gray-500">
+                        <i class="fas fa-folder-open text-4xl mb-3"></i>
+                        <p>No resources found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if resources.has_other_pages %}
+    <div class="flex justify-center mt-6">
+        <nav class="inline-flex rounded-md shadow">
+            {% if resources.has_previous %}
+            <a href="?page={{ resources.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">
+                Previous
+            </a>
+            {% else %}
+            <span class="px-4 py-2 text-sm font-medium text-gray-300 bg-white border border-gray-300 rounded-l-md cursor-not-allowed">
+                Previous
+            </span>
+            {% endif %}
+            
+            {% for i in resources.paginator.page_range %}
+                {% if resources.number == i %}
+                <span class="px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-blue-500">
+                    {{ i }}
+                </span>
+                {% elif i > resources.number|add:'-3' and i < resources.number|add:'3' %}
+                <a href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" 
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
+                    {{ i }}
+                </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if resources.has_next %}
+            <a href="?page={{ resources.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.file_type %}&file_type={{ request.GET.file_type }}{% endif %}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">
+                Next
+            </a>
+            {% else %}
+            <span class="px-4 py-2 text-sm font-medium text-gray-300 bg-white border border-gray-300 rounded-r-md cursor-not-allowed">
+                Next
+            </span>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+        <h3 class="text-xl font-semibold mb-4">Confirm Deletion</h3>
+        <p class="mb-6">Are you sure you want to delete the resource "<span id="resourceTitle"></span>"? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-4">
+            <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
+                Cancel
+            </button>
+            <form id="deleteForm" method="post" action="">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(resourceId, resourceTitle) {
+        document.getElementById('resourceTitle').textContent = resourceTitle;
+        document.getElementById('deleteForm').action = "{% url 'resources:admin_delete_resource' 0 %}".replace('0', resourceId);
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}

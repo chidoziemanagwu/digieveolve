@@ -1,0 +1,249 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-8">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Edit Module</h2>
+                    <p class="text-gray-600">Course: {{ course.title }}</p>
+                </div>
+                <a href="{% url 'courses:admin_course_modules' course.id %}" 
+                   class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-6" id="moduleForm">
+                {% csrf_token %}
+                
+                <!-- Title -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Module Title *</label>
+                    <input type="text" name="title" required value="{{ module.title }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea name="description" rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                              placeholder="A brief description of the module">{{ module.description }}</textarea>
+                </div>
+
+                <!-- Content -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Content *</label>
+                    <div class="border border-gray-300 rounded-md overflow-hidden">
+                        <!-- Simple formatting toolbar -->
+                        <div class="bg-gray-50 p-2 border-b border-gray-300 flex gap-2">
+                            <button type="button" onclick="formatText('bold')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-bold"></i>
+                            </button>
+                            <button type="button" onclick="formatText('italic')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-italic"></i>
+                            </button>
+                            <button type="button" onclick="formatText('underline')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-underline"></i>
+                            </button>
+                            <div class="border-l border-gray-300 mx-2"></div>
+                            <button type="button" onclick="formatText('insertUnorderedList')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-list-ul"></i>
+                            </button>
+                            <button type="button" onclick="formatText('insertOrderedList')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-list-ol"></i>
+                            </button>
+                            <div class="border-l border-gray-300 mx-2"></div>
+                            <button type="button" onclick="formatText('createLink')" class="p-1 hover:bg-gray-200 rounded">
+                                <i class="fas fa-link"></i>
+                            </button>
+                        </div>
+                        <!-- Editable content area -->
+                        <div id="editor" contenteditable="true" 
+                             class="w-full p-4 min-h-[200px] focus:outline-none"
+                             placeholder="Write your module content here..."></div>
+                        <input type="hidden" name="content" id="content">
+                    </div>
+                </div>
+
+                <!-- Video URL -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Video URL</label>
+                    <input type="url" name="video_url" value="{{ module.video_url }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                           placeholder="Enter video URL">
+                </div>
+
+                <!-- Duration and Order Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (minutes) *</label>
+                        <input type="number" name="duration" required min="1" value="{{ module.duration }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Order</label>
+                        <input type="number" name="order" value="{{ module.order }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500">
+                    </div>
+                </div>
+
+                <!-- Has Quiz -->
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" name="has_quiz" id="has_quiz" {% if module.has_quiz %}checked{% endif %}
+                               class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded">
+                        <label for="has_quiz" class="text-sm text-gray-900">
+                            This module has a quiz
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end pt-6">
+                    <button type="submit" 
+                            class="px-6 py-3 bg-amber-600 text-white rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                        Update Module
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Text formatting functions
+    function formatText(command, value = null) {
+        if (command === 'createLink') {
+            const url = prompt('Enter the URL:');
+            if (url) {
+                const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
+                document.execCommand(command, false, formattedUrl);
+            }
+        } else {
+            document.execCommand(command, false, value);
+        }
+        document.getElementById('editor').focus();
+    }
+
+    // Handle form submission
+    document.getElementById('moduleForm').addEventListener('submit', function(e) {
+        let editorContent = document.getElementById('editor').innerHTML;
+        
+        if (editorContent.includes('Write your module content here...')) {
+            editorContent = '';
+        }
+        
+        if (!editorContent.trim() || editorContent === '<br>' || editorContent === '<div><br></div>') {
+            e.preventDefault();
+            alert('Please enter module content');
+            return;
+        }
+
+        document.getElementById('content').value = editorContent;
+    });
+
+    // Initialize editor
+    const editor = document.getElementById('editor');
+    
+    // Set initial content for edit mode
+    editor.innerHTML = `{{ module.content|safe|escapejs }}`;
+    
+    function handlePlaceholder() {
+        if (editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
+            editor.innerHTML = '<div class="text-gray-400">Write your module content here...</div>';
+        }
+    }
+
+    // Only handle placeholder if no content
+    if (!editor.innerHTML.trim()) {
+        handlePlaceholder();
+    }
+
+    editor.addEventListener('focus', function() {
+        if (this.innerHTML.includes('Write your module content here...')) {
+            this.innerHTML = '';
+        }
+    });
+
+    editor.addEventListener('blur', handlePlaceholder);
+
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.execCommand('insertParagraph', false);
+        }
+    });
+
+    editor.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
+
+    editor.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key.toLowerCase()) {
+                case 'b':
+                    e.preventDefault();
+                    formatText('bold');
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    formatText('italic');
+                    break;
+                case 'u':
+                    e.preventDefault();
+                    formatText('underline');
+                    break;
+            }
+        }
+    });
+</script>
+
+<style>
+    #editor:empty:before {
+        content: attr(placeholder);
+        color: #9CA3AF;
+    }
+    #editor:focus {
+        outline: none;
+    }
+    #editor ul {
+        list-style-type: disc;
+        margin-left: 1.5em;
+        margin-bottom: 1em;
+    }
+    #editor ol {
+        list-style-type: decimal;
+        margin-left: 1.5em;
+        margin-bottom: 1em;
+    }
+    #editor li {
+        margin-bottom: 0.5em;
+    }
+    #editor a {
+        color: #d97706;
+        text-decoration: underline;
+    }
+    #editor a:hover {
+        color: #b45309;
+    }
+    #editor p {
+        margin-bottom: 1em;
+    }
+</style>
+{% endblock %}
