@@ -9,78 +9,97 @@
     <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
         <div class="md:flex">
             <!-- Course Image -->
-            <div class="md:w-1/3">
+            <div class="md:w-1/3 relative">
                 {% if course.image %}
                 <img src="{{ course.image.url }}" alt="{{ course.title }}" class="w-full h-full object-cover">
                 {% else %}
-                <div class="h-full bg-gray-200 flex items-center justify-center p-8">
+                <div class="h-full min-h-[300px] bg-gray-200 flex items-center justify-center p-8">
                     <i class="fas fa-laptop-code text-gray-400 text-6xl"></i>
+                </div>
+                {% endif %}
+                {% if course.is_free %}
+                <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    Free Course
                 </div>
                 {% endif %}
             </div>
             
             <!-- Course Info -->
             <div class="md:w-2/3 p-6">
-                <h1 class="text-2xl font-bold mb-2">{{ course.title }}</h1>
+                <div class="flex justify-between items-start">
+                    <h1 class="text-2xl font-bold mb-2">{{ course.title }}</h1>
+                    {% if is_enrolled and progress == 100 %}
+                    <span class="bg-green-100 text-green-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                        <i class="fas fa-check-circle mr-1"></i>Completed
+                    </span>
+                    {% endif %}
+                </div>
+                
                 <p class="text-gray-600 mb-4">{{ course.short_description }}</p>
                 
                 <div class="flex flex-wrap gap-3 mb-4">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
                         <i class="fas fa-clock mr-1"></i> {{ course.duration }} hours
                     </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-book mr-1"></i> {{ modules|length }} Modules
+                    </span>
+                    {% if has_certificate %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        <i class="fas fa-certificate mr-1"></i> Certificate
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if is_enrolled %}
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Course Progress</span>
+                        <span class="text-sm font-medium text-amber-600">{{ progress }}% Complete</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                        <div class="bg-amber-500 h-2.5 rounded-full transition-all duration-300" 
+                             style="width: {{ progress }}%"></div>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        {{ completed_modules|length }} of {{ modules|length }} modules completed
+                    </p>
                 </div>
                 
-<!-- templates/courses/detail.html -->
-<!-- Replace the enrollment button section with this -->
-
-{% if is_enrolled %}
-    <div class="mb-4">
-        <div class="flex justify-between items-center mb-1">
-            <span class="text-sm font-medium text-gray-700">Progress</span>
-            <span class="text-sm font-medium text-amber-600">{{ progress }}%</span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full h-2.5">
-            <div class="bg-amber-500 h-2.5 rounded-full" style="width: {{ progress }}%"></div>
-        </div>
-    </div>
-    
-    <a href="#modules" class="inline-block bg-amber-500 text-white px-6 py-2 rounded-md hover:bg-amber-600 transition-colors">
-        {% if progress == 100 %}
-            Review Course
-        {% else %}
-            Continue Learning
-        {% endif %}
-    </a>
-{% else %}
-    <div class="mb-4">
-        {% if course.is_free %}
-            <span class="text-lg font-bold text-green-600">Free</span>
-        {% else %}
-            <span class="text-lg font-bold">₦{{ course.price|floatformat:2 }}</span>
-        {% endif %}
-    </div>
-    
-    <button id="enrollButton" class="inline-block bg-amber-500 text-white px-6 py-2 rounded-md hover:bg-amber-600 transition-colors">
-        {% if course.is_free %}
-            Enroll Now (Free)
-        {% else %}
-            Enroll Now (₦{{ course.price|floatformat:2 }})
-        {% endif %}
-    </button>
-    
-    <!-- Payment processing modal -->
-    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 class="text-xl font-bold mb-4">Processing Payment</h2>
-            <p class="mb-4">Please wait while we redirect you to the payment gateway...</p>
-            <div class="flex justify-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
-            </div>
-        </div>
-    </div>
-    
-
-{% endif %}
+                <div class="flex space-x-4">
+                    <a href="#modules" 
+                       class="flex-1 text-center bg-amber-500 text-white px-6 py-2 rounded-md hover:bg-amber-600 transition-colors">
+                        {% if progress == 100 %}
+                            Review Course
+                        {% else %}
+                            Continue Learning
+                        {% endif %}
+                    </a>
+                    {% if progress == 100 and has_certificate %}
+                    <a href="{% url 'courses:download_certificate' course.slug %}" 
+                       class="flex-1 text-center border border-amber-500 text-amber-500 px-6 py-2 rounded-md hover:bg-amber-50 transition-colors">
+                        Download Certificate
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="mb-4">
+                    {% if course.is_free %}
+                        <span class="text-lg font-bold text-green-600">Free Course</span>
+                    {% else %}
+                        <span class="text-lg font-bold">₦{{ course.price|floatformat:2 }}</span>
+                    {% endif %}
+                </div>
+                
+                <button id="enrollButton" 
+                        class="w-full bg-amber-500 text-white px-6 py-2 rounded-md hover:bg-amber-600 transition-colors">
+                    {% if course.is_free %}
+                        Enroll Now (Free)
+                    {% else %}
+                        Enroll Now (₦{{ course.price|floatformat:2 }})
+                    {% endif %}
+                </button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -89,7 +108,7 @@
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-xl font-semibold mb-4">About This Course</h2>
         <div class="prose max-w-none">
-            {{ course.description|linebreaks }}
+            {{ course.description|safe }}
         </div>
     </div>
     
@@ -100,31 +119,40 @@
         
         <div class="space-y-4">
             {% for module in modules %}
-            <div class="border border-gray-200 rounded-lg p-4 hover:border-amber-500 transition-colors">
-                <div class="flex justify-between items-center">
-                    <div>
+            <div class="border {% if module.id|stringformat:'s' in completed_modules %}border-green-200 bg-green-50{% else %}border-gray-200{% endif %} rounded-lg p-4 hover:border-amber-500 transition-colors">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
                         <h3 class="font-medium">{{ module.title }}</h3>
                         <p class="text-sm text-gray-600 mt-1">{{ module.description }}</p>
                         
-                        {% if module.video_duration %}
-                        <div class="flex items-center text-gray-500 text-sm mt-2">
-                            <i class="fas fa-video mr-1"></i> {{ module.video_duration }} minutes
+                        <div class="flex flex-wrap items-center gap-4 text-gray-500 text-sm mt-2">
+                            {% if module.duration %}
+                            <span class="flex items-center">
+                                <i class="fas fa-clock mr-1"></i> {{ module.duration }} minutes
+                            </span>
+                            {% endif %}
+                            {% if module.video_url %}
+                            <span class="flex items-center">
+                                <i class="fas fa-video mr-1"></i> Video Lesson
+                            </span>
+                            {% endif %}
                             {% if module.has_quiz %}
-                            <span class="mx-2">•</span>
-                            <i class="fas fa-question-circle mr-1"></i> Includes quiz
+                            <span class="flex items-center">
+                                <i class="fas fa-question-circle mr-1"></i> Includes Quiz
+                            </span>
                             {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                     
-                    <div class="flex items-center">
+                    <div class="ml-4 flex items-center">
                         {% if module.id|stringformat:"s" in completed_modules %}
                         <span class="mr-4 text-green-500">
                             <i class="fas fa-check-circle"></i> Completed
                         </span>
                         {% endif %}
                         
-                        <a href="{% url 'courses:module_detail' course.slug module.id %}" class="inline-block bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600 transition-colors">
+                        <a href="{% url 'courses:module_detail' course.slug module.id %}" 
+                           class="inline-block {% if module.id|stringformat:'s' in completed_modules %}bg-green-500{% else %}bg-amber-500{% endif %} text-white px-4 py-2 rounded hover:opacity-90 transition-colors">
                             {% if module.id|stringformat:"s" in completed_modules %}
                                 Review
                             {% else %}
@@ -139,6 +167,17 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h2 class="text-xl font-bold mb-4">Processing Payment</h2>
+        <p class="mb-4">Please wait while we redirect you to the payment gateway...</p>
+        <div class="flex justify-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -147,39 +186,45 @@
         const enrollButton = document.getElementById('enrollButton');
         const paymentModal = document.getElementById('paymentModal');
         
-        enrollButton.addEventListener('click', function() {
-            // Show loading modal
-            paymentModal.classList.remove('hidden');
-            
-            // Send request to initiate payment
-            fetch('{% url "courses:initiate_payment" course.slug %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.authorization_url) {
-                        // Redirect to payment gateway
-                        window.location.href = data.authorization_url;
-                    } else if (data.redirect_url) {
-                        // Free course, redirect to course page
-                        window.location.href = data.redirect_url;
+        if (enrollButton) {
+            enrollButton.addEventListener('click', function() {
+                paymentModal.classList.remove('hidden');
+                
+                fetch('{% url "courses:initiate_payment" course.slug %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.authorization_url) {
+                            window.location.href = data.authorization_url;
+                        } else if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        }
+                    } else {
+                        paymentModal.classList.add('hidden');
+                        alert('Error: ' + (data.error || 'Something went wrong'));
                     }
-                } else {
-                    // Hide modal and show error
+                })
+                .catch(error => {
                     paymentModal.classList.add('hidden');
-                    alert('Error: ' + (data.error || 'Something went wrong'));
-                }
-            })
-            .catch(error => {
-                // Hide modal and show error
-                paymentModal.classList.add('hidden');
-                alert('Error: ' + error.message);
+                    alert('Error: ' + error.message);
+                });
+            });
+        }
+
+        // Smooth scroll to modules section
+        document.querySelectorAll('a[href="#modules"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
             });
         });
     });

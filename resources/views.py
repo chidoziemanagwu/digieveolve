@@ -13,24 +13,51 @@ import os
 
 
 def resource_list(request):
+    # Get all resources with filters
+    resources_list = Resource.objects.all().order_by('-updated_date')
+
+    # Apply search filter
+    search_query = request.GET.get('search', '')
+    if search_query:
+        resources_list = resources_list.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Get category filter from URL
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        resources_list = resources_list.filter(category__category_type=category_filter)
+
+    # Apply file type filter
+    file_type_filter = request.GET.get('file_type', '')
+    if file_type_filter:
+        resources_list = resources_list.filter(file_type=file_type_filter)
+
+    # Get all categories
     categories = ResourceCategory.objects.all()
 
-    # Get featured resources for each category type
-    technical_resources = Resource.objects.filter(category__category_type='technical').order_by('-updated_date')[:3]
-    career_resources = Resource.objects.filter(category__category_type='career').order_by('-updated_date')[:3]
-    research_resources = Resource.objects.filter(category__category_type='research').order_by('-updated_date')[:3]
+    # Get category types for the filter
+    resource_category_types = ResourceCategory._meta.get_field('category_type').choices
+
+    # Get file types for filter
+    file_types = Resource._meta.get_field('file_type').choices
+
+    # Split resources by category type for the featured sections
+    technical_resources = resources_list.filter(category__category_type='technical')[:3]
+    career_resources = resources_list.filter(category__category_type='career')[:3]
+    research_resources = resources_list.filter(category__category_type='research')[:3]
+
+    # Pagination for the main resources list
+    paginator = Paginator(resources_list, 9)  # Show 9 resources per page
+    page = request.GET.get('page', 1)
+    resources = paginator.get_page(page)
 
     # Get latest blog posts if you have a blog app
     try:
         blog_posts = BlogPost.objects.filter(status='published').order_by('-created_at')[:3]
     except:
         blog_posts = []
-
-    # Get category filter from URL
-    category_filter = request.GET.get('category')
-
-    # Get category types for the filter
-    resource_category_types = ResourceCategory._meta.get_field('category_type').choices
 
     context = {
         'categories': categories,
@@ -39,7 +66,12 @@ def resource_list(request):
         'research_resources': research_resources,
         'blog_posts': blog_posts,
         'category_filter': category_filter,
-        'resource_category_types': resource_category_types
+        'resource_category_types': resource_category_types,
+        'file_types': file_types,
+        'search_query': search_query,
+        'file_type_filter': file_type_filter,
+        'resources': resources,  # Paginated resources
+        'total_resources': resources_list.count(),  # Total count for showing in template
     }
 
     return render(request, 'resources.html', context)

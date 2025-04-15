@@ -1,3 +1,4 @@
+
 {% extends 'admin_base.html' %}
 
 {% block title %}Module Management{% endblock %}
@@ -73,38 +74,38 @@
                         <div class="mt-4">
                             <div class="flex justify-between items-center">
                                 <h4 class="text-sm font-medium text-gray-700">Content</h4>
-                                {% if module.video_url %}
-                                <span class="text-sm text-gray-600">
-                                    <i class="fas fa-video mr-1"></i>Video Available
-                                </span>
-                                {% endif %}
+                                <div class="flex items-center space-x-3">
+                                    {% if module.video_url %}
+                                    <span class="text-sm text-gray-600">
+                                        <i class="fas fa-video mr-1"></i>Video Available
+                                    </span>
+                                    {% endif %}
+                                    {% if module.quiz %}
+                                    <span class="text-sm text-green-600">
+                                        <i class="fas fa-check-circle mr-1"></i>Has Quiz
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="mt-2 pl-4 py-2 bg-gray-50 rounded">
                                 <div class="prose max-w-none">
-                                    {{ module.content|truncatewords:50|linebreaks }}
+                                    {{ module.content|safe }}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Module Quiz -->
+                        {% if module.has_quiz %}
                         <div class="mt-4">
-                            <div class="flex justify-between items-center">
-                                <h4 class="text-sm font-medium text-gray-700">Quiz</h4>
-                                {% if module.quiz %}
+                            <div class="flex justify-between items-center bg-blue-400 py-2 px-4 rounded-lg">
+                                <h4 class="text-sm font-medium text-white">Has Quiz</h4>
                                 <a href="{% url 'courses:admin_module_quiz' course.id module.id %}" 
-                                   class="text-sm text-blue-600 hover:text-blue-900">
+                                class="text-sm text-white">
                                     <i class="fas fa-question-circle mr-1"></i>Manage Quiz
                                 </a>
-                                {% endif %}
                             </div>
-                            {% if module.quiz %}
-                            <div class="mt-2 pl-4 py-2 bg-gray-50 rounded">
-                                <span class="text-sm text-gray-600">
-                                    <i class="fas fa-check-circle mr-1"></i>Quiz: {{ module.quiz.title }}
-                                </span>
-                            </div>
-                            {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -184,90 +185,155 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script>
-{% if courses_modules %}
-// Store sortable instances
-let sortableInstances = {};
+document.addEventListener('DOMContentLoaded', function() {
+    {% if courses_modules %}
+    // Store sortable instances
+    let sortableInstances = {};
 
-function showCourseModules(courseId) {
-    // Hide all course module containers
-    document.querySelectorAll('.course-modules-container').forEach(container => {
-        container.classList.add('hidden');
+    // Initialize delete confirmation
+    document.querySelectorAll('form[action*="delete"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!confirm('Are you sure you want to delete this module? This action cannot be undone.')) {
+                e.preventDefault();
+            }
+        });
     });
 
-    // Show selected course's modules
-    if (courseId) {
-        const selectedContainer = document.getElementById(`courseModules-${courseId}`);
-        if (selectedContainer) {
-            selectedContainer.classList.remove('hidden');
-            
-            // Initialize sortable if not already done
-            if (!sortableInstances[courseId]) {
-                const el = document.getElementById(`sortableModules-${courseId}`);
-                sortableInstances[courseId] = new Sortable(el, {
-                    animation: 150,
-                    ghostClass: 'bg-blue-100'
-                });
+    window.showCourseModules = function(courseId) {
+        // Hide all course module containers
+        document.querySelectorAll('.course-modules-container').forEach(container => {
+            container.classList.add('hidden');
+        });
+
+        // Show selected course's modules
+        if (courseId) {
+            const selectedContainer = document.getElementById(`courseModules-${courseId}`);
+            if (selectedContainer) {
+                selectedContainer.classList.remove('hidden');
+                
+                // Initialize sortable if not already done
+                if (!sortableInstances[courseId]) {
+                    const el = document.getElementById(`sortableModules-${courseId}`);
+                    sortableInstances[courseId] = new Sortable(el, {
+                        animation: 150,
+                        ghostClass: 'bg-blue-100'
+                    });
+                }
             }
         }
-    }
-}
+    };
 
-function openReorderModal() {
-    document.getElementById('reorderModal').classList.remove('hidden');
-    // Reset course selector
-    const courseSelector = document.getElementById('courseSelector');
-    courseSelector.value = '';
-    // Hide all course modules initially
-    document.querySelectorAll('.course-modules-container').forEach(container => {
-        container.classList.add('hidden');
-    });
-}
+    window.openReorderModal = function() {
+        document.getElementById('reorderModal').classList.remove('hidden');
+        // Reset course selector
+        const courseSelector = document.getElementById('courseSelector');
+        courseSelector.value = '';
+        // Hide all course modules initially
+        document.querySelectorAll('.course-modules-container').forEach(container => {
+            container.classList.add('hidden');
+        });
+    };
 
-function closeReorderModal() {
-    document.getElementById('reorderModal').classList.add('hidden');
-}
+    window.closeReorderModal = function() {
+        document.getElementById('reorderModal').classList.add('hidden');
+    };
 
-function saveModuleOrder() {
-    const courseId = document.getElementById('courseSelector').value;
-    if (!courseId) {
-        alert('Please select a course first');
-        return;
-    }
-
-    const moduleOrder = Array.from(document.querySelectorAll(`#sortableModules-${courseId} > div[data-module-id]`))
-        .map(el => el.dataset.moduleId);
-
-    if (moduleOrder.length === 0) {
-        alert('No modules found to reorder');
-        return;
-    }
-
-    fetch(`/courses/courses/${courseId}/modules/reorder/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify({ module_order: moduleOrder })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+    window.saveModuleOrder = function() {
+        const courseId = document.getElementById('courseSelector').value;
+        if (!courseId) {
+            alert('Please select a course first');
+            return;
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error saving module order: ' + (data.error || 'Unknown error'));
+
+        const moduleOrder = Array.from(document.querySelectorAll(`#sortableModules-${courseId} > div[data-module-id]`))
+            .map(el => el.dataset.moduleId);
+
+        if (moduleOrder.length === 0) {
+            alert('No modules found to reorder');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error saving module order: ' + error.message);
-    });
-}
-{% endif %}
+
+        fetch(`/courses/courses/${courseId}/modules/reorder/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ module_order: moduleOrder })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error saving module order: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving module order: ' + error.message);
+        });
+    };
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('reorderModal');
+        if (event.target == modal) {
+            closeReorderModal();
+        }
+    };
+    {% endif %}
+});
 </script>
+
+<style>
+/* Add these styles for better content formatting */
+.prose {
+    max-width: none;
+}
+.prose ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+.prose ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+.prose p {
+    margin-bottom: 0.75em;
+}
+.prose a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+.prose a:hover {
+    color: #1d4ed8;
+}
+
+/* Modal and drag-and-drop styles */
+.cursor-move {
+    cursor: move;
+}
+#sortableModules li {
+    transition: background-color 0.2s ease;
+}
+#sortableModules li:hover {
+    background-color: #f3f4f6;
+}
+.sortable-ghost {
+    opacity: 0.5;
+}
+.sortable-chosen {
+    background-color: #fef3c7 !important;
+}
+</style>
 {% endblock %}

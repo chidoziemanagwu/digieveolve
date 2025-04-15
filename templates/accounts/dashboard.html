@@ -19,7 +19,7 @@
     <!-- Page Header -->
     <div class="mb-8">
         <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p class="text-gray-600">Welcome back, {{ student.user.first_name }}!</p>
+        <p class="text-gray-600">Welcome back, {{ student.first_name }}!</p>
     </div>
     
     <!-- Dashboard Overview -->
@@ -28,7 +28,10 @@
         <div class="dashboard-card">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-medium">Enrolled Courses</h2>
-                <span class="text-2xl font-semibold text-amber-500">{{ enrolled_courses|length }}</span>
+                <div class="text-right">
+                    <span class="text-2xl font-semibold text-amber-500">{{ enrolled_courses|length }}</span>
+                    <p class="text-sm text-gray-500">{{ completed_courses }} completed</p>
+                </div>
             </div>
             <p class="text-gray-600 text-sm">Track your progress across all your enrolled courses</p>
             <a href="{% url 'courses:enrolled_courses' %}" class="mt-4 inline-flex items-center text-sm text-amber-500 hover:text-amber-600">
@@ -61,7 +64,8 @@
                 <span class="text-2xl font-semibold text-amber-500">{{ progress_percentage }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div class="bg-amber-500 h-2.5 rounded-full" style="width: {{ progress_percentage }}%"></div>
+                <div class="bg-amber-500 h-2.5 rounded-full transition-all duration-300" 
+                     style="width: {{ progress_percentage }}%"></div>
             </div>
             <p class="text-gray-600 text-sm">
                 {% if progress_percentage < 25 %}
@@ -75,6 +79,46 @@
                 {% endif %}
             </p>
         </div>
+    </div>
+
+    <!-- Course Progress -->
+    <div class="dashboard-card mb-8">
+        <h2 class="text-lg font-medium mb-4">Course Progress</h2>
+        {% if course_progress_details %}
+            <div class="space-y-6">
+                {% for course_detail in course_progress_details %}
+                    <div class="border rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-medium text-lg">{{ course_detail.course.title }}</h3>
+                                <p class="text-sm text-gray-600">
+                                    {{ course_detail.completed_modules }} of {{ course_detail.total_modules }} modules completed
+                                </p>
+                            </div>
+                            <span class="text-lg font-semibold text-amber-500">
+                                {{ course_detail.progress|floatformat:1 }}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
+                            <div class="bg-amber-500 h-2 rounded-full transition-all duration-300" 
+                                 style="width: {{ course_detail.progress }}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-gray-500">
+                            <span>Last accessed: {{ course_detail.last_accessed|timesince }} ago</span>
+                            <a href="{% url 'courses:detail' course_detail.course.slug %}" 
+                               class="text-amber-500 hover:text-amber-600">
+                                Continue Learning →
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-6">
+                <p class="text-gray-500">No course progress to display.</p>
+                <p class="text-sm text-gray-400 mt-2">Enroll in courses to start tracking your progress!</p>
+            </div>
+        {% endif %}
     </div>
     
     <!-- Recent Activity -->
@@ -134,7 +178,7 @@
         {% if recommended_courses %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for course in recommended_courses %}
-                    <div class="border rounded-lg overflow-hidden">
+                    <div class="border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
                         {% if course.image %}
                             <img src="{{ course.image.url }}" alt="{{ course.title }}" class="h-40 w-full object-cover">
                         {% else %}
@@ -148,7 +192,7 @@
                             <div class="flex justify-between items-center mt-3">
                                 <span class="text-sm font-medium text-gray-900">{{ course.duration }} hours</span>
                                 <a href="{% url 'courses:detail' course.slug %}" 
-                                   class="inline-block text-sm text-white bg-amber-500 px-4 py-2 rounded hover:bg-amber-600">
+                                   class="inline-block text-sm text-white bg-amber-500 px-4 py-2 rounded hover:bg-amber-600 transition-colors">
                                     Explore Course
                                 </a>
                             </div>

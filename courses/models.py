@@ -148,3 +148,28 @@ class Module(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+
+
+
+
+# courses/models.py
+
+class ModuleProgress(models.Model):
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='module_progress')
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    video_progress = models.IntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
+    completed_date = models.DateTimeField(null=True, blank=True)
+    last_accessed = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('enrollment', 'module')
+
+    def mark_completed(self):
+        if not self.is_completed:
+            self.is_completed = True
+            self.completed_date = timezone.now()
+            self.save()
+
+            # Update enrollment progress
+            self.enrollment.mark_module_completed(self.module.id)

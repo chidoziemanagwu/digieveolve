@@ -39,9 +39,9 @@
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Price
                         </th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <!-- <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Status
-                        </th>
+                        </th> -->
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Actions
                         </th>
@@ -91,12 +91,12 @@
                                 {% endif %}
                             </p>
                         </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                        <!-- <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <span class="relative inline-block px-3 py-1 font-semibold {% if course.is_published %}text-green-900{% else %}text-gray-900{% endif %} leading-tight">
                                 <span aria-hidden class="absolute inset-0 {% if course.is_published %}bg-green-200{% else %}bg-gray-200{% endif %} opacity-50 rounded-full"></span>
                                 <span class="relative">{{ course.is_published|yesno:"Published,Draft" }}</span>
                             </span>
-                        </td>
+                        </td> -->
                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <div class="flex space-x-3">
                                 <a href="{% url 'courses:admin_course_modules' course.id %}" 

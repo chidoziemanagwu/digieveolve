@@ -280,70 +280,100 @@ def verify_payment(request, reference):
 def module_detail(request, course_slug, module_id):
     course = get_object_or_404(Course, slug=course_slug)
     module = get_object_or_404(Module, id=module_id, course=course)
-
     enrollment = get_object_or_404(Enrollment, student=request.user, course=course)
-
-    # Check if this module has been completed
-    completed_modules = enrollment.completed_modules.split(',') if enrollment.completed_modules else []
-    is_completed = str(module.id) in completed_modules
 
     # Get quizzes for this module
     quizzes = Quiz.objects.filter(module=module)
+    has_quiz = quizzes.exists()
 
-    # Track video progress if needed
-    if request.method == 'POST' and 'video_progress' in request.POST:
-        progress = request.POST.get('video_progress')
-        if progress == '100' and not is_completed and not module.has_quiz:
-            # Mark module as completed if video is watched and no quiz is required
-            if enrollment.completed_modules:
-                enrollment.completed_modules += f",{module.id}"
-            else:
-                enrollment.completed_modules = str(module.id)
+    # Check quiz completion if module has quizzes
+    quiz_completed = False
+    if has_quiz:
+        quiz_completed = QuizAttempt.objects.filter(
+            student=request.user,
+            quiz__module=module,
+            is_passed=True
+        ).exists()
 
-            enrollment.save()
+    # Get completion status
+    completed_modules = enrollment.completed_modules.split(',') if enrollment.completed_modules else []
+    is_completed = str(module.id) in completed_modules
 
-            # Create activity record
-            Activity.objects.create(
-                user=request.user,
-                activity_type='completion',
-                description=f"Completed module: {module.title}",
-                course=course
-            )
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if request.POST.get('mark_complete'):
+            # Check if module can be marked as complete
+            can_complete = not has_quiz or quiz_completed
 
-            is_completed = True
+            if can_complete and not is_completed:
+                # Mark module as completed
+                if enrollment.completed_modules:
+                    completed_modules = enrollment.completed_modules.split(',')
+                    if str(module.id) not in completed_modules:
+                        completed_modules.append(str(module.id))
+                        enrollment.completed_modules = ','.join(completed_modules)
+                else:
+                    enrollment.completed_modules = str(module.id)
 
-            # Check if all modules are completed
-            all_modules = Module.objects.filter(course=course)
-            all_completed = all(str(m.id) in enrollment.completed_modules.split(',') for m in all_modules)
-
-            if all_completed and not enrollment.is_completed:
-                enrollment.is_completed = True
-                enrollment.completion_date = timezone.now()
+                enrollment.last_accessed = timezone.now()
                 enrollment.save()
-
-                # Generate certificate
-                Certificate.objects.create(
-                    student=request.user,
-                    course=course,
-                    issued_date=timezone.now()
-                )
 
                 # Create activity record
                 Activity.objects.create(
                     user=request.user,
-                    activity_type='certificate',
-                    description=f"Earned certificate for: {course.title}",
+                    activity_type='completion',
+                    description=f"Completed module: {module.title}",
                     course=course
                 )
+
+                # Check if course is completed
+                all_modules = set(str(m.id) for m in Module.objects.filter(course=course))
+                completed_set = set(enrollment.completed_modules.split(','))
+
+                if all_modules.issubset(completed_set) and not enrollment.is_completed:
+                    enrollment.is_completed = True
+                    enrollment.completion_date = timezone.now()
+                    enrollment.save()
+
+                    # Generate certificate
+                    Certificate.objects.create(
+                        student=request.user,
+                        course=course,
+                        issued_date=timezone.now()
+                    )
+
+                    # Create certificate activity
+                    Activity.objects.create(
+                        user=request.user,
+                        activity_type='certificate',
+                        description=f"Earned certificate for: {course.title}",
+                        course=course
+                    )
+
+                return JsonResponse({
+                    'success': True,
+                    'is_completed': True
+                })
+
+        return JsonResponse({'success': False})
+
+    # Get next and previous modules
+    next_module = Module.objects.filter(course=course, order__gt=module.order).first()
+    prev_module = Module.objects.filter(course=course, order__lt=module.order).last()
 
     context = {
         'course': course,
         'module': module,
         'is_completed': is_completed,
         'quizzes': quizzes,
+        'has_quiz': has_quiz,
+        'quiz_completed': quiz_completed,
+        'next_module': next_module,
+        'prev_module': prev_module,
     }
 
     return render(request, 'courses/module_detail.html', context)
+
+    
 
 
 @login_required(login_url='accounts:login')

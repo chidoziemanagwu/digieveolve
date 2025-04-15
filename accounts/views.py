@@ -191,9 +191,10 @@ def login_view(request):
 
 @login_required(login_url='accounts:login')
 def dashboard_view(request):
-    # Get enrolled courses
-    enrolled_courses = Enrollment.objects.filter(
-        student=request.user
+    # Get enrolled courses with related course data
+    enrollments = Enrollment.objects.filter(
+        student=request.user,
+        is_active=True
     ).select_related('course')
 
     # Get certificates
@@ -201,27 +202,103 @@ def dashboard_view(request):
         student=request.user
     ).select_related('course')
 
-    # Calculate progress percentage
-    total_courses = enrolled_courses.count()
-    completed_courses = enrolled_courses.filter(is_completed=True).count()
-    progress_percentage = (completed_courses / total_courses * 100) if total_courses > 0 else 0
+    # Calculate overall progress
+    total_progress = 0
+    completed_courses = 0
+    total_courses = enrollments.count()
+
+    if total_courses > 0:
+        for enrollment in enrollments:
+            # Get all modules for the course
+            total_modules = enrollment.course.modules.count()
+            if total_modules > 0:
+                # Get completed modules
+                completed_modules = len([m for m in enrollment.completed_modules.split(',') if m])
+                # Calculate progress for this course
+                course_progress = (completed_modules / total_modules) * 100
+                total_progress += course_progress
+
+                if enrollment.is_completed:
+                    completed_courses += 1
+
+        # Calculate average progress across all courses
+        progress_percentage = total_progress / total_courses
+    else:
+        progress_percentage = 0
 
     # Get recent activities
-    recent_activities = Activity.objects.filter(
-        user=request.user
-    ).select_related('course').order_by('-timestamp')[:5]
+    recent_activities = []
+
+    # Add module completions
+    for enrollment in enrollments:
+        if enrollment.completed_modules:
+            completed_module_ids = [int(m) for m in enrollment.completed_modules.split(',') if m]
+            completed_modules = enrollment.course.modules.filter(id__in=completed_module_ids)
+
+            for module in completed_modules:
+                recent_activities.append({
+                    'activity_type': 'completion',
+                    'description': f'Completed module: {module.title}',
+                    'timestamp': enrollment.last_accessed,
+                    'course': enrollment.course
+                })
+
+    # Add course enrollments
+    for enrollment in enrollments:
+        recent_activities.append({
+            'activity_type': 'enrollment',
+            'description': f'Enrolled in course: {enrollment.course.title}',
+            'timestamp': enrollment.enrollment_date,
+            'course': enrollment.course
+        })
+
+    # Add certificate earnings
+    for certificate in certificates:
+        recent_activities.append({
+            'activity_type': 'certificate',
+            'description': f'Earned certificate for {certificate.course.title}',
+            'timestamp': certificate.issued_date,
+            'course': certificate.course
+        })
+
+    # Sort activities by timestamp and get the 5 most recent
+    recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+    recent_activities = recent_activities[:5]
 
     # Get recommended courses
-    enrolled_course_ids = enrolled_courses.values_list('course_id', flat=True)
+    enrolled_course_ids = enrollments.values_list('course_id', flat=True)
     recommended_courses = Course.objects.exclude(
         id__in=enrolled_course_ids
     ).order_by('?')[:3]  # Random selection of 3 courses
 
+    # Get course progress details
+    course_progress_details = []
+    for enrollment in enrollments:
+        total_modules = enrollment.course.modules.count()
+        completed_modules = len([m for m in enrollment.completed_modules.split(',') if m])
+
+        if total_modules > 0:
+            progress = (completed_modules / total_modules) * 100
+        else:
+            progress = 0
+
+        course_progress_details.append({
+            'course': enrollment.course,
+            'progress': progress,
+            'completed_modules': completed_modules,
+            'total_modules': total_modules,
+            'last_accessed': enrollment.last_accessed
+        })
+
     context = {
         'student': request.user,
-        'enrolled_courses': enrolled_courses,
+        'enrolled_courses': enrollments,
+        'course_progress_details': course_progress_details,
         'certificates': certificates,
+        'certificates_count': certificates.count(),
         'progress_percentage': round(progress_percentage, 1),
+        'completed_courses': completed_courses,
+        'total_courses': total_courses,
         'recent_activities': recent_activities,
         'recommended_courses': recommended_courses,
     }
@@ -229,6 +306,8 @@ def dashboard_view(request):
     return render(request, 'accounts/dashboard.html', context)
 
 
+
+    
 @login_required
 def courses_view(request):
     enrolled_courses = Enrollment.objects.filter(student=request.user).select_related('course')

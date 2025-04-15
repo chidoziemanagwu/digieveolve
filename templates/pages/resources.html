@@ -27,193 +27,7 @@
     </div>
 </section>
 
-<!-- Resources Header & Filter -->
-<section class="py-10 bg-white border-b">
-    <div class="container mx-auto px-4">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center">
-            <h2 class="text-2xl font-bold mb-4 md:mb-0">Learning Resources</h2>
-            <div class="flex flex-wrap gap-2">
-                <a href="{% url 'resources:list' %}" class="{% if not category_filter %}bg-amber-500 text-white{% else %}bg-gray-200 text-gray-800{% endif %} px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
-                    All
-                </a>
-                {% for category_type, category_name in resource_category_types %}
-                <a href="{% url 'resources:list' %}?category={{ category_type }}" class="{% if category_filter == category_type %}bg-amber-500 text-white{% else %}bg-gray-200 text-gray-800{% endif %} px-4 py-2 rounded hover:bg-amber-500 hover:text-white transition-colors">
-                    {{ category_name }}
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- Resources Grid -->
-<section class="py-16 bg-white">
-    <div class="container mx-auto px-4">
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Technical Resources -->
-            {% if technical_resources %}
-            {% with resource=technical_resources.0 %}
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-                 data-aos="fade-up" data-aos-delay="50">
-                <div class="relative pb-48">
-                    {% if resource.category.image %}
-                    <img src="{{ resource.category.image.url }}" 
-                         alt="{{ resource.category.title }}" 
-                         class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
-                    {% else %}
-                    <img src="{% static 'images/resources/python-docs.jpg' %}" 
-                         alt="{{ resource.category.title }}" 
-                         class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
-                    {% endif %}
-                    <div class="absolute top-0 right-0 m-2">
-                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-                            {{ resource.category.get_category_type_display }}
-                        </span>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-3">{{ resource.category.title }}</h3>
-                    <p class="text-gray-600 mb-4">
-                        {{ resource.category.description|truncatewords:20 }}
-                    </p>
-                    
-                    <!-- Content list -->
-                    <ul class="mb-4 space-y-2">
-                        {% for res in technical_resources|slice:":2" %}
-                        <li class="flex items-start">
-                            <i class="fas {% if res.file_type == 'pdf' %}fa-file-pdf{% elif res.file_type == 'doc' %}fa-file-word{% elif res.file_type == 'code' %}fa-file-code{% else %}fa-file-alt{% endif %} text-amber-500 mt-1 mr-2"></i>
-                            <div>
-                                <a href="{% url 'resources:detail' res.slug %}" class="text-gray-800 hover:text-amber-500 font-medium">{{ res.title }}</a>
-                                <p class="text-sm text-gray-500">{{ res.description|truncatewords:8 }}</p>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    
-                    <div class="border-t pt-4">
-                        <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-amber-500 hover:text-amber-600 font-medium">
-                            View all {{ resource.category.title }} resources <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endwith %}
-            {% endif %}
-
-            <!-- Career Resources -->
-            {% if career_resources %}
-            {% with resource=career_resources.0 %}
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-                 data-aos="fade-up" data-aos-delay="100">
-                <div class="relative pb-48">
-                    {% if resource.category.image %}
-                    <img src="{{ resource.category.image.url }}" 
-                         alt="{{ resource.category.title }}" 
-                         class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
-                    {% else %}
-                    <img src="{% static 'images/resources/career.jpg' %}" 
-                         alt="{{ resource.category.title }}" 
-                         class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
-                    {% endif %}
-                    <div class="absolute top-0 right-0 m-2">
-                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-                            {{ resource.category.get_category_type_display }}
-                        </span>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-3">{{ resource.category.title }}</h3>
-                    <p class="text-gray-600 mb-4">
-                        {{ resource.category.description|truncatewords:20 }}
-                    </p>
-                    
-                    <ul class="mb-4 space-y-2">
-                        {% for res in career_resources|slice:":2" %}
-                        <li class="flex items-start">
-                            <i class="fas {% if res.file_type == 'pdf' %}fa-file-pdf{% elif res.file_type == 'doc' %}fa-file-word{% elif res.file_type == 'code' %}fa-file-code{% else %}fa-file-alt{% endif %} text-amber-500 mt-1 mr-2"></i>
-                            <div>
-                                <a href="{% url 'resources:detail' res.slug %}" class="text-gray-800 hover:text-amber-500 font-medium">{{ res.title }}</a>
-                                <p class="text-sm text-gray-500">{{ res.description|truncatewords:8 }}</p>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    
-                    <div class="border-t pt-4">
-                        <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-amber-500 hover:text-amber-600 font-medium">
-                            View all {{ resource.category.title }} resources <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endwith %}
-            {% endif %}
-
-            <!-- Research Resources -->
-            {% if research_resources %}
-            {% with resource=research_resources.0 %}
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-                 data-aos="fade-up" data-aos-delay="150">
-                <div class="relative pb-48">
-                    {% if resource.category.image %}
-                    <img src="{{ resource.category.image.url }}" 
-                         alt="{{ resource.category.title }}" 
-                         class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
-                    {% else %}
-                    <img src="{% static 'images/resources/research.jpg' %}" 
-                         alt="{{ resource.category.title }}" 
-                         class="absolute inset-0 h-full w-full object-cover"
-                         onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text={{ resource.category.title|urlencode }}'">
-                    {% endif %}
-                    <div class="absolute top-0 right-0 m-2">
-                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
-                            {{ resource.category.get_category_type_display }}
-                        </span>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-3">{{ resource.category.title }}</h3>
-                    <p class="text-gray-600 mb-4">
-                        {{ resource.category.description|truncatewords:20 }}
-                    </p>
-                    
-                    <ul class="mb-4 space-y-2">
-                        {% for res in research_resources|slice:":2" %}
-                        <li class="flex items-start">
-                            <i class="fas {% if res.file_type == 'pdf' %}fa-file-pdf{% elif res.file_type == 'doc' %}fa-file-word{% elif res.file_type == 'code' %}fa-file-code{% else %}fa-file-alt{% endif %} text-amber-500 mt-1 mr-2"></i>
-                            <div>
-                                <a href="{% url 'resources:detail' res.slug %}" class="text-gray-800 hover:text-amber-500 font-medium">{{ res.title }}</a>
-                                <p class="text-sm text-gray-500">{{ res.description|truncatewords:8 }}</p>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    
-                    <div class="border-t pt-4">
-                        <a href="{% url 'resources:category_detail' resource.category.slug %}" class="text-amber-500 hover:text-amber-600 font-medium">
-                            View all {{ resource.category.title }} resources <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endwith %}
-            {% endif %}
-
-            {% if not technical_resources and not career_resources and not research_resources %}
-            <div class="col-span-3 text-center py-12">
-                <i class="fas fa-folder-open text-gray-300 text-5xl mb-4"></i>
-                <h3 class="text-xl text-gray-500">No resources found</h3>
-                <p class="text-gray-400 mt-2">Resources will be added soon.</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</section>
 
 <!-- Featured Blog Posts -->
 <section class="py-12 bg-gray-50">
@@ -356,4 +170,18 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script>
+    AOS.init({
+        duration: 800,
+        once: true,
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 {% endblock %}

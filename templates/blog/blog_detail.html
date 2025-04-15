@@ -63,3 +63,166 @@
     </div>
 </article>
 {% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Content Typography */
+    .prose {
+        color: #374151;
+        max-width: 65ch;
+    }
+
+    .prose h2 {
+        color: #111827;
+        font-weight: 700;
+        font-size: 1.5em;
+        margin-top: 2em;
+        margin-bottom: 1em;
+        line-height: 1.3333333;
+    }
+
+    .prose h3 {
+        color: #111827;
+        font-weight: 600;
+        font-size: 1.25em;
+        margin-top: 1.6em;
+        margin-bottom: 0.6em;
+        line-height: 1.6;
+    }
+
+    .prose p {
+        margin-top: 1.25em;
+        margin-bottom: 1.25em;
+        line-height: 1.75;
+    }
+
+    .prose ul {
+        margin-top: 1.25em;
+        margin-bottom: 1.25em;
+        padding-left: 1.625em;
+        list-style-type: disc;
+    }
+
+    .prose ol {
+        margin-top: 1.25em;
+        margin-bottom: 1.25em;
+        padding-left: 1.625em;
+        list-style-type: decimal;
+    }
+
+    .prose li {
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+        padding-left: 0.375em;
+    }
+
+    .prose blockquote {
+        font-weight: 500;
+        font-style: italic;
+        color: #111827;
+        border-left-width: 0.25rem;
+        border-left-color: #F59E0B;
+        margin-top: 1.6em;
+        margin-bottom: 1.6em;
+        padding-left: 1em;
+    }
+
+    .prose code {
+        color: #111827;
+        font-weight: 600;
+        font-size: 0.875em;
+        background-color: #F3F4F6;
+        padding: 0.25em 0.5em;
+        border-radius: 0.375rem;
+    }
+
+    .prose pre {
+        color: #E5E7EB;
+        background-color: #1F2937;
+        overflow-x: auto;
+        font-size: 0.875em;
+        line-height: 1.7142857;
+        margin-top: 1.7142857em;
+        margin-bottom: 1.7142857em;
+        border-radius: 0.375rem;
+        padding: 0.8571429em 1.1428571em;
+    }
+
+    .prose pre code {
+        background-color: transparent;
+        border-width: 0;
+        border-radius: 0;
+        padding: 0;
+        font-weight: 400;
+        color: inherit;
+        font-size: inherit;
+        font-family: inherit;
+        line-height: inherit;
+    }
+
+    .prose img {
+        margin-top: 2em;
+        margin-bottom: 2em;
+        border-radius: 0.5rem;
+    }
+
+    .prose a {
+        color: #F59E0B;
+        text-decoration: underline;
+        font-weight: 500;
+    }
+
+    .prose a:hover {
+        color: #D97706;
+    }
+
+    .prose table {
+        width: 100%;
+        table-layout: auto;
+        text-align: left;
+        margin-top: 2em;
+        margin-bottom: 2em;
+        font-size: 0.875em;
+        line-height: 1.7142857;
+    }
+
+    .prose thead {
+        color: #111827;
+        font-weight: 600;
+        border-bottom-width: 1px;
+        border-bottom-color: #D1D5DB;
+    }
+
+    .prose thead th {
+        vertical-align: bottom;
+        padding-right: 0.5714286em;
+        padding-bottom: 0.5714286em;
+        padding-left: 0.5714286em;
+    }
+
+    .prose tbody tr {
+        border-bottom-width: 1px;
+        border-bottom-color: #E5E7EB;
+    }
+
+    .prose tbody td {
+        vertical-align: top;
+        padding: 0.5714286em;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        .prose {
+            font-size: 0.875rem;
+        }
+        
+        .prose h2 {
+            font-size: 1.25em;
+        }
+        
+        .prose h3 {
+            font-size: 1.1em;
+        }
+    }
+</style>
+{% endblock %}
