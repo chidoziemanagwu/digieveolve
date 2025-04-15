@@ -98,12 +98,13 @@
                                     </span>
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4">
-                                <a href="{% url 'courses:course_detail' course_id=enrollment.course.id %}" 
-                                   class="text-blue-600 hover:text-blue-900">
-                                    View Course
-                                </a>
-                            </td>
+                            <!-- Change this in student_detail.html -->
+<td class="px-6 py-4">
+    <a href="{% url 'courses:admin_course_list'  %}" 
+       class="text-blue-600 hover:text-blue-900">
+        View Course
+    </a>
+</td>
                         </tr>
                         {% endfor %}
                     </tbody>

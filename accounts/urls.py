@@ -15,6 +15,7 @@ urlpatterns = [
     path('dashboard/courses/', views.courses_view, name='courses'),
     path('dashboard/certificates/', views.certificates_view, name='certificates'),
 
+    path('api/payments/<int:payment_id>/', views.payment_detail_api, name='payment_detail_api'),
 
     # Password Reset URLs
     path('password-reset/',

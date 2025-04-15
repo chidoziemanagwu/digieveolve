@@ -280,19 +280,11 @@ document.addEventListener('DOMContentLoaded', function() {
             $('.dataTables_length select').addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5');
             
             // Style the search input
-            $('.dataTables_filter input').addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5');
+            $('.dataTables_filter input')
+                .addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5')
+                .attr('placeholder', 'Search queries...');
             
-            // Add search icon
-            $('.dataTables_filter label').html(function(_, html) {
-                return `
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                        ${html.replace('Search:', '')}
-                    </div>
-                `;
-            });
+        
 
             // Style the wrapper
             $('.dataTables_wrapper').addClass('bg-white rounded-lg shadow-sm p-4');
@@ -317,6 +309,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Charts
     initializeCharts();
 
+    // Clear existing search functions to avoid conflicts
+    $.fn.dataTable.ext.search = [];
+    
     // Add custom search function for status filtering
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         const statusFilter = $('.filter-btn.bg-blue-500').data('filter');
@@ -345,7 +340,14 @@ document.addEventListener('DOMContentLoaded', function() {
             table.draw(); // This will trigger our custom search function
         });
     });
+    
+    // Make sure the search input works properly
+    $('.dataTables_filter input').off('keyup.DT search.DT input.DT paste.DT cut.DT');
+    $('.dataTables_filter input').on('keyup', function() {
+        table.search(this.value).draw();
+    });
 });
+
 
 function initializeCharts() {
     // Timeline Chart

@@ -2,6 +2,70 @@
 
 {% block title %}Quiz Management{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Search functionality styles */
+    .search-container {
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9CA3AF;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #9CA3AF;
+        display: none;
+    }
+
+    .clear-search:hover {
+        color: #6B7280;
+    }
+
+    /* Animation for search results */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    /* No results message styling */
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        margin: 1rem 0;
+    }
+
+    .no-results i {
+        font-size: 3rem;
+        color: #9CA3AF;
+        margin-bottom: 1rem;
+    }
+
+    .search-highlight {
+        background-color: #fef3c7;
+        padding: 0.125rem 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
     <!-- Header -->
@@ -11,6 +75,22 @@
                 <h2 class="text-xl font-semibold">Quiz Management</h2>
                 <p class="text-gray-600">Manage all course quizzes</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="">
+        <div class="relative flex items-center max-w-3xl mx-auto">
+            <span class="absolute left-3 text-gray-400">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" 
+                   id="quizSearch" 
+                   class="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
+                   placeholder="Search quizzes by title, course, or module...">
+            <button class="absolute right-3 text-gray-400 hover:text-gray-600 hidden" id="clearSearch">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
 
@@ -28,13 +108,13 @@
     <!-- Quizzes List -->
     <div class="bg-white rounded-lg shadow">
         <div class="p-6">
-            <div class="space-y-4">
+            <div class="space-y-4" id="quizContainer">
                 {% for quiz in quizzes %}
-                <div class="border rounded-lg p-4">
+                <div class="border rounded-lg p-4 quiz-item" data-quiz-id="{{ quiz.id }}">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h3 class="text-lg font-medium">{{ quiz.title }}</h3>
-                            <p class="text-gray-600">
+                            <h3 class="text-lg font-medium quiz-title">{{ quiz.title }}</h3>
+                            <p class="text-gray-600 quiz-course-module">
                                 Course: {{ quiz.module.course.title }} | 
                                 Module: {{ quiz.module.title }}
                             </p>
@@ -90,7 +170,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center py-8">
+                <div class="text-center py-8" id="emptyState">
                     <div class="text-gray-400 mb-4">
                         <i class="fas fa-question-circle text-4xl"></i>
                     </div>
@@ -98,7 +178,126 @@
                 </div>
                 {% endfor %}
             </div>
+            <!-- No Search Results Message (hidden by default) -->
+            <div id="noSearchResults" class="no-results hidden">
+                <i class="fas fa-search"></i>
+                <p class="text-gray-500">No quizzes found matching your search</p>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('quizSearch');
+    const clearButton = document.getElementById('clearSearch');
+    const quizItems = document.querySelectorAll('.quiz-item');
+    const noSearchResults = document.getElementById('noSearchResults');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (searchInput && quizItems.length > 0) {
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            
+            // Show/hide clear button
+            clearButton.style.display = this.value ? 'block' : 'none';
+            
+            // Add debounce to prevent excessive searching
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                quizItems.forEach(quizItem => {
+                    // Safely get text content with null checks
+                    const titleEl = quizItem.querySelector('.quiz-title');
+                    const courseModuleEl = quizItem.querySelector('.quiz-course-module');
+                    
+                    const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+                    const courseModule = courseModuleEl ? courseModuleEl.textContent.toLowerCase() : '';
+
+                    const matches = title.includes(searchTerm) || courseModule.includes(searchTerm);
+
+                    if (matches) {
+                        quizItem.style.display = '';
+                        quizItem.classList.add('fade-in');
+                        visibleCount++;
+                        
+                        // Highlight matching text if needed
+                        if (searchTerm) {
+                            highlightText(titleEl, searchTerm);
+                            highlightText(courseModuleEl, searchTerm);
+                        } else {
+                            // Remove highlights if search is cleared
+                            removeHighlights(titleEl);
+                            removeHighlights(courseModuleEl);
+                        }
+                    } else {
+                        quizItem.style.display = 'none';
+                        quizItem.classList.remove('fade-in');
+                    }
+                });
+
+                // Show/hide no results message
+                if (visibleCount === 0 && searchTerm) {
+                    noSearchResults.classList.remove('hidden');
+                    if (emptyState) emptyState.classList.add('hidden');
+                } else {
+                    noSearchResults.classList.add('hidden');
+                    if (emptyState && quizItems.length === 0) emptyState.classList.remove('hidden');
+                }
+            }, 300); // 300ms debounce
+        });
+
+        // Clear search button functionality
+        if (clearButton) {
+            clearButton.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                this.style.display = 'none';
+                
+                // Remove all highlights
+                document.querySelectorAll('.search-highlight').forEach(el => {
+                    const parent = el.parentNode;
+                    parent.replaceChild(document.createTextNode(el.textContent), el);
+                    parent.normalize();
+                });
+            });
+        }
+    }
+    
+    // Function to highlight matching text
+    function highlightText(element, searchTerm) {
+        if (!element) return;
+        
+        // Remove existing highlights first
+        removeHighlights(element);
+        
+        const content = element.innerHTML;
+        const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+        element.innerHTML = content.replace(regex, '<span class="search-highlight">$1</span>');
+    }
+    
+    // Function to remove highlights
+    function removeHighlights(element) {
+        if (!element) return;
+        
+        const highlights = element.querySelectorAll('.search-highlight');
+        highlights.forEach(highlight => {
+            const textNode = document.createTextNode(highlight.textContent);
+            highlight.parentNode.replaceChild(textNode, highlight);
+        });
+        element.normalize(); // Combine adjacent text nodes
+    }
+    
+    // Helper function to escape special regex characters
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+});
+</script>
 {% endblock %}

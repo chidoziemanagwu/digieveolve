@@ -404,67 +404,46 @@ def quiz_list(request, course_slug, module_id):
 def take_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
 
-    # Check if there's an incomplete attempt
-    attempt = QuizAttempt.objects.filter(
-        student=request.user,
-        quiz=quiz,
-        completed_at__isnull=True
-    ).first()
-
-    if not attempt:
-        # Create a new attempt
-        attempt = QuizAttempt.objects.create(
-            student=request.user,
-            quiz=quiz
-        )
-
     if request.method == 'POST':
         # Process quiz submission
         questions = Question.objects.filter(quiz=quiz)
         score = 0
         total_points = sum(q.points for q in questions)
 
+        # Get or create attempt
+        attempt = QuizAttempt.objects.filter(
+            student=request.user,
+            quiz=quiz,
+            completed_at__isnull=True
+        ).first()
+
+        if not attempt:
+            attempt = QuizAttempt.objects.create(
+                student=request.user,
+                quiz=quiz
+            )
+
+        # Delete any existing responses for this attempt
+        QuestionResponse.objects.filter(attempt=attempt).delete()
+
+        # Create new responses
         for question in questions:
-            if question.question_type == 'multiple_choice':
-                answer_id = request.POST.get(f'question_{question.id}')
-                if answer_id:
-                    selected_answer = Answer.objects.get(id=answer_id)
-                    is_correct = selected_answer.is_correct
+            answer_id = request.POST.get(f'question_{question.id}')
 
-                    QuestionResponse.objects.create(
-                        attempt=attempt,
-                        question=question,
-                        selected_answer=selected_answer,
-                        is_correct=is_correct
-                    )
+            if answer_id:
+                selected_answer = Answer.objects.get(id=answer_id)
+                is_correct = selected_answer.is_correct
 
-                    if is_correct:
-                        score += question.points
-
-            elif question.question_type == 'true_false':
-                answer_id = request.POST.get(f'question_{question.id}')
-                if answer_id:
-                    selected_answer = Answer.objects.get(id=answer_id)
-                    is_correct = selected_answer.is_correct
-
-                    QuestionResponse.objects.create(
-                        attempt=attempt,
-                        question=question,
-                        selected_answer=selected_answer,
-                        is_correct=is_correct
-                    )
-
-                    if is_correct:
-                        score += question.points
-
-            elif question.question_type == 'short_answer':
-                text_response = request.POST.get(f'question_{question.id}')
-                # For short answers, instructor will need to grade manually
+                # Create response record
                 QuestionResponse.objects.create(
                     attempt=attempt,
                     question=question,
-                    text_response=text_response
+                    selected_answer=selected_answer,
+                    is_correct=is_correct
                 )
+
+                if is_correct:
+                    score += question.points
 
         # Calculate percentage score
         percentage_score = (score / total_points) * 100 if total_points > 0 else 0
@@ -475,66 +454,18 @@ def take_quiz(request, quiz_id):
         attempt.completed_at = timezone.now()
         attempt.save()
 
-        # Update module completion if passed
-        if attempt.is_passed:
-            enrollment = Enrollment.objects.get(
-                student=request.user,
-                course=quiz.module.course
-            )
-
-            # Add this module to completed modules if not already there
-            if str(quiz.module.id) not in enrollment.completed_modules.split(',') if enrollment.completed_modules else []:
-                if enrollment.completed_modules:
-                    enrollment.completed_modules += f",{quiz.module.id}"
-                else:
-                    enrollment.completed_modules = str(quiz.module.id)
-
-                enrollment.save()
-
-                # Create activity record
-                Activity.objects.create(
-                    user=request.user,
-                    activity_type='completion',
-                    description=f"Completed module: {quiz.module.title}",
-                    course=quiz.module.course
-                )
-
-                # Check if all modules are completed
-                all_modules = Module.objects.filter(course=quiz.module.course)
-                completed_modules = enrollment.completed_modules.split(',') if enrollment.completed_modules else []
-                all_completed = all(str(m.id) in completed_modules for m in all_modules)
-
-                if all_completed and not enrollment.is_completed:
-                    enrollment.is_completed = True
-                    enrollment.completion_date = timezone.now()
-                    enrollment.save()
-
-                    # Generate certificate
-                    Certificate.objects.create(
-                        student=request.user,
-                        course=quiz.module.course,
-                        issued_date=timezone.now()
-                    )
-
-                    # Create activity record
-                    Activity.objects.create(
-                        user=request.user,
-                        activity_type='certificate',
-                        description=f"Earned certificate for: {quiz.module.course.title}",
-                        course=quiz.module.course
-                    )
-
         return redirect('courses:quiz_result', attempt_id=attempt.id)
 
+    # For GET request, show quiz questions
     questions = Question.objects.filter(quiz=quiz).order_by('order')
-
     context = {
         'quiz': quiz,
         'questions': questions,
-        'attempt': attempt,
     }
-
     return render(request, 'courses/take_quiz.html', context)
+
+
+    
 
 
 @login_required(login_url='accounts:login')
@@ -1311,3 +1242,50 @@ def admin_delete_quiz(request, quiz_id):
 
 
     
+
+@admin_login_required
+def admin_quiz_attempt_detail(request, quiz_id, attempt_id):
+    print(f"Fetching quiz attempt details - quiz_id: {quiz_id}, attempt_id: {attempt_id}")
+
+    # Get quiz with related module and course
+    quiz = get_object_or_404(Quiz.objects.select_related('module', 'module__course'), id=quiz_id)
+    print(f"Found quiz: {quiz.title}")
+
+    # Get attempt with all related data
+    attempt = get_object_or_404(
+        QuizAttempt.objects.select_related(
+            'student',
+            'quiz'
+        ).prefetch_related(
+            'responses',
+            'responses__question',
+            'responses__selected_answer',
+            'responses__question__answers'
+        ),
+        id=attempt_id,
+        quiz=quiz
+    )
+    print(f"Found attempt by: {attempt.student.username}")
+
+    # Get responses
+    responses = attempt.responses.all().order_by('question__order')
+    print(f"Number of responses: {responses.count()}")
+
+    # Print each response for debugging
+    for response in responses:
+        print(f"""
+        Question: {response.question.text}
+        Selected Answer: {response.selected_answer.text if response.selected_answer else 'None'}
+        Is Correct: {response.is_correct}
+        Number of options: {response.question.answers.count()}
+        """)
+
+    context = {
+        'quiz': quiz,
+        'attempt': attempt,
+        'responses': responses,
+        'course': quiz.module.course,
+        'module': quiz.module,
+    }
+
+    return render(request, 'digievolveadmin/courses/quiz_attempt_detail.html', context)

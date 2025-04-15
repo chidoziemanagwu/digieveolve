@@ -9,7 +9,6 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/datetime/1.5.1/css/dataTables.dateTime.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     .revenue-card {
         transition: all 0.3s ease;
@@ -43,8 +42,137 @@
         border-radius: 0.5rem;
         border: 2px dashed #e5e7eb;
     }
-
-
+    
+    /* Enhanced date filter styles */
+    .date-filter-container {
+        display: flex;
+        align-items: center;
+        background-color: #f9fafb;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 1rem;
+    }
+    
+    .date-filter-label {
+        font-weight: 600;
+        color: #4b5563;
+        margin-right: 1rem;
+    }
+    
+    .date-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        flex-grow: 1;
+    }
+    
+    .date-input-group {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border-radius: 0.375rem;
+        border: 1px solid #d1d5db;
+        padding: 0 0.5rem;
+        flex-grow: 1;
+        max-width: 250px;
+    }
+    
+    .date-input-group label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        white-space: nowrap;
+        padding-right: 0.5rem;
+    }
+    
+    .date-input-group input {
+        border: none;
+        padding: 0.625rem 0.5rem;
+        width: 100%;
+        outline: none;
+    }
+    
+    .date-input-group input:focus {
+        box-shadow: none;
+    }
+    
+    .date-filter-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .date-filter-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+    
+    .apply-filter-btn {
+        background-color: #3b82f6;
+        color: white;
+        border: 1px solid #3b82f6;
+    }
+    
+    .apply-filter-btn:hover {
+        background-color: #2563eb;
+    }
+    
+    .clear-filter-btn {
+        background-color: white;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+    }
+    
+    .clear-filter-btn:hover {
+        background-color: #f3f4f6;
+    }
+    
+    .active-filter-badge {
+        display: inline-flex;
+        align-items: center;
+        background-color: #dbeafe;
+        color: #1e40af;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        margin-left: 0.75rem;
+    }
+    
+    .active-filter-badge button {
+        margin-left: 0.5rem;
+        color: #1e40af;
+        opacity: 0.7;
+    }
+    
+    .active-filter-badge button:hover {
+        opacity: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .date-filter-container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .date-filter-label {
+            margin-bottom: 0.5rem;
+        }
+        
+        .date-inputs {
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+        
+        .date-input-group {
+            max-width: none;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -155,20 +283,40 @@
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-semibold">Payment History</h2>
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <label for="min" class="text-sm font-medium text-gray-600">From:</label>
-                        <input type="date" id="min" name="min" 
-                               class="block w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <!-- Simplified Date Filter UI -->
+            <div class="date-filter-container">
+                <div class="date-filter-label">
+                    <svg class="w-5 h-5 inline-block mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Filter by Date:
+                </div>
+                <div class="date-inputs">
+                    <div class="date-input-group">
+                        <label for="min">From:</label>
+                        <input type="date" id="min" name="min" class="date-input bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5">
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <label for="max" class="text-sm font-medium text-gray-600">To:</label>
-                        <input type="date" id="max" name="max" 
-                               class="block w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <div class="date-input-group">
+                        <label for="max">To:</label>
+                        <input type="date" id="max" name="max" class="date-input bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full ps-10 p-2.5">
                     </div>
-                    <button onclick="clearDates()" 
-                            class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="date-filter-actions">
+                    <button id="applyDateFilter" class="date-filter-button apply-filter-btn bg-green-600 py-1 px-2 me-2 mb-2 text-sm font-medium text-gray-900 rounded-lg  mt-2">
+                        Apply
+                    </button>
+                    <button id="clearDateFilter" class="date-filter-button clear-filter-btn bg-red-600 py-1 px-2 me-2 mb-2 text-sm font-medium text-gray-900 rounded-lg  mt-2">
                         Clear
+                    </button>
+                </div>
+                <div id="activeFilterBadge" class="active-filter-badge" style="display: none;">
+                    <span id="filterDateRange"></span>
+                    <button id="removeFilter">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -178,7 +326,6 @@
                 <thead>
                     <tr>
                         <th>Reference</th>
-                        <th>Student</th>
                         <th>Course</th>
                         <th>Amount</th>
                         <th>Date</th>
@@ -190,7 +337,6 @@
                     {% for payment in payments %}
                     <tr>
                         <td>{{ payment.reference }}</td>
-                        <td>{{ payment.student.user.get_full_name }}</td>
                         <td>{{ payment.course.title }}</td>
                         <td>₦{{ payment.amount|intcomma }}</td>
                         <td data-order="{{ payment.created_at|date:'Y-m-d' }}">
@@ -205,8 +351,8 @@
                             </span>
                         </td>
                         <td>
-                            <button onclick="viewPaymentDetails('{{ payment.id }}')"
-                                    class="text-blue-600 hover:text-blue-900">
+                            <button data-payment-id="{{ payment.id }}"
+                                    class="view-payment-details text-blue-600 hover:text-blue-900">
                                 View Details
                             </button>
                         </td>
@@ -239,8 +385,25 @@
                     </svg>
                 </button>
             </div>
-            <div class="p-6" id="paymentDetails">
-                <!-- Payment details will be loaded here -->
+            <div class="p-6">
+                <div class="mb-3">
+                    <strong>Reference:</strong> <span id="payment-reference"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Student:</strong> <span id="payment-student"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Course:</strong> <span id="payment-course"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Amount:</strong> <span id="payment-amount"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Date:</strong> <span id="payment-date"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong> <span id="payment-status"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -257,245 +420,317 @@
 <script src="https://cdn.datatables.net/datetime/1.5.1/js/dataTables.dateTime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script>
-    $(document).ready(function() {
-        // Initialize Flatpickr date pickers
-        const dateConfig = {
-            enableTime: false,
-            dateFormat: "Y-m-d",
-            maxDate: "today",
-            onChange: function(selectedDates, dateStr, instance) {
-                table.draw();
-            }
-        };
-        
-        const startDate = flatpickr("#min", {
-            ...dateConfig,
-            onClose: function(selectedDates, dateStr, instance) {
-                endDate.set('minDate', dateStr);
-            }
-        });
-        
-        const endDate = flatpickr("#max", {
-            ...dateConfig,
-            onClose: function(selectedDates, dateStr, instance) {
-                startDate.set('maxDate', dateStr);
-            }
-        });
-    
-        // Initialize DataTable
-        var table = $('#paymentsTable').DataTable({
-            responsive: true,
-            dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'copy',
-                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
-                },
-                {
-                    extend: 'csv',
-                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
-                },
-                {
-                    extend: 'excel',
-                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
-                },
-                {
-                    extend: 'pdf',
-                    className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
-                }
-            ],
-            pageLength: 10,
-            order: [[4, 'desc']], // Sort by date by default
-            language: {
-                search: "Search:",
-                lengthMenu: "Show _MENU_ entries per page",
-                info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                paginate: {
-                    first: "First",
-                    last: "Last",
-                    next: "Next",
-                    previous: "Previous"
-                },
-                emptyTable: `
-                    <div class="text-center py-12">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No payments found</h3>
-                        <p class="mt-1 text-sm text-gray-500">No payment records are available for the selected period.</p>
-                    </div>
-                `
-            }
-        });
-    
-
-
-        // Set max date to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('min').max = today;
-        document.getElementById('max').max = today;
-
-        // Handle date changes
-        $('#min, #max').on('change', function() {
-            const minDate = $('#min').val();
-            const maxDate = $('#max').val();
-            
-            // If min date is selected, set it as minimum for max date
-            if (minDate) {
-                $('#max').attr('min', minDate);
-            }
-            
-            // If max date is selected, set it as maximum for min date
-            if (maxDate) {
-                $('#min').attr('max', maxDate);
-            }
-            
-            table.draw();
-        });
-
-
-        // Custom filtering function
-        $.fn.dataTable.ext.search.push(
-            function(settings, data, dataIndex) {
-                var min = $('#min').val() ? moment($('#min').val()) : null;
-                var max = $('#max').val() ? moment($('#max').val()).endOf('day') : null;
-                var date = moment(data[4], 'MMM DD, YYYY');
-
-                if (
-                    (min === null && max === null) ||
-                    (min === null && date <= max) ||
-                    (min <= date && max === null) ||
-                    (min <= date && date <= max)
-                ) {
-                    return true;
-                }
-                return false;
-            }
-        );
-
-        // Add this new function to clear the date filters
-function clearDates() {
-    document.getElementById('min').value = '';
-    document.getElementById('max').value = '';
-    document.getElementById('min').removeAttribute('max');
-    document.getElementById('max').removeAttribute('min');
-    $('#paymentsTable').DataTable().draw();
-}
-
-    // Monthly Revenue Chart
-    const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
-    new Chart(monthlyRevenueCtx, {
-        type: 'line',
-        data: {
-            labels: {{ monthly_labels|safe }},
-            datasets: [{
-                label: 'Monthly Revenue',
-                data: {{ monthly_data|safe }},
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₦' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    // Course Revenue Chart
-    const courseRevenueCtx = document.getElementById('courseRevenueChart').getContext('2d');
-    new Chart(courseRevenueCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {{ course_labels|safe }},
-            datasets: [{
-                data: {{ course_data|safe }},
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(245, 158, 11, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(139, 92, 246, 0.8)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                }
-            }
-        }
-    });
-});
-
-// Payment Details Modal
+// Global functions for modal handling
 function viewPaymentDetails(paymentId) {
-    fetch(`/api/payments/${paymentId}/`)
-        .then(response => response.json())
+    fetch(`/accounts/api/payments/${paymentId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
-            document.getElementById('paymentDetails').innerHTML = `
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500">Reference</h4>
-                        <p class="mt-1">${data.reference}</p>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500">Student</h4>
-                        <p class="mt-1">${data.student_name}</p>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500">Course</h4>
-                        <p class="mt-1">${data.course_title}</p>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500">Amount</h4>
-                        <p class="mt-1">₦${data.amount}</p>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500">Date</h4>
-                        <p class="mt-1">${data.created_at}</p>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500">Status</h4>
-                        <p class="mt-1">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${data.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                  data.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                  'bg-red-100 text-red-800'}">
-                                ${data.status}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-            `;
+            console.log("Payment data:", data); // Add this for debugging
+            
+            // Update modal content
+            document.getElementById('payment-reference').textContent = data.reference;
+            
+            // Handle student name with fallbacks
+            let studentName = data.student_name;
+            if (!studentName && data.student) {
+                if (data.student.user && data.student.user.get_full_name) {
+                    studentName = data.student.user.get_full_name;
+                } else if (data.student.first_name && data.student.last_name) {
+                    studentName = `${data.student.first_name} ${data.student.last_name}`;
+                } else if (data.student.full_name) {
+                    studentName = data.student.full_name;
+                }
+            }
+            document.getElementById('payment-student').textContent = studentName || 'Unknown Student';
+            
+            document.getElementById('payment-course').textContent = data.course_title || (data.course && data.course.title) || 'Unknown Course';
+            document.getElementById('payment-amount').textContent = `₦${data.amount.toLocaleString()}`;
+            document.getElementById('payment-date').textContent = data.created_at;
+            
+            // Set status with appropriate styling
+            const statusElement = document.getElementById('payment-status');
+            statusElement.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+            
+            // Add status color class
+            statusElement.className = '';
+            if (data.status === 'completed') {
+                statusElement.classList.add('text-green-600');
+            } else if (data.status === 'pending') {
+                statusElement.classList.add('text-yellow-600');
+            } else {
+                statusElement.classList.add('text-red-600');
+            }
+            
+            // Show the modal
             document.getElementById('paymentModal').classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error fetching payment details');
         });
 }
+
+
 
 function closePaymentModal() {
     document.getElementById('paymentModal').classList.add('hidden');
 }
+
+// Add event listener for ESC key to close modal
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closePaymentModal();
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('paymentModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closePaymentModal();
+    }
+});
+
+$(document).ready(function() {
+    let table;
+    
+    // Set max date for date inputs to today
+    const today = new Date().toISOString().split('T')[0];
+    $('#min, #max').attr('max', today);
+    
+    // Handle min/max date constraints
+    $('#min').on('change', function() {
+        $('#max').attr('min', $(this).val());
+    });
+    
+    $('#max').on('change', function() {
+        $('#min').attr('max', $(this).val());
+    });
+    
+    // Initialize DataTable first
+    // Initialize DataTable first
+table = $('#paymentsTable').DataTable({
+    responsive: true,
+    dom: '<"flex flex-col md:flex-row justify-between items-center mb-4"<"flex-1"B><"flex-1 text-right"f>>' +
+         '<"overflow-x-auto"rt>' +
+         '<"flex flex-col md:flex-row justify-between items-center mt-4"<"flex-1"l><"flex-1"i><"flex-1"p>>',
+    buttons: [
+        {
+            extend: 'copy',
+            className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow mr-2'
+        },
+        {
+            extend: 'csv',
+            className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow mr-2'
+        },
+        {
+            extend: 'excel',
+            className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow mr-2'
+        },
+        {
+            extend: 'pdf',
+            className: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded shadow'
+        }
+    ],
+    pageLength: 10,
+    order: [[4, 'desc']], // Sort by date by default
+    language: {
+        search: "Search payments:",
+        lengthMenu: "Show _MENU_ entries per page",
+        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+        paginate: {
+            first: '<i class="fas fa-angle-double-left"></i>',
+            previous: '<i class="fas fa-angle-left"></i>',
+            next: '<i class="fas fa-angle-right"></i>',
+            last: '<i class="fas fa-angle-double-right"></i>'
+        }
+    },
+    columnDefs: [
+        {
+            targets: [3], // Amount column
+            render: function(data, type, row) {
+                if (type === 'display') {
+                    return '₦' + parseFloat(data.replace(/[^\d.-]/g, '')).toLocaleString();
+                }
+                return data;
+            }
+        },
+        {
+            targets: [5], // Status column
+            className: 'text-center'
+        }
+    ],
+    initComplete: function() {
+        // Add placeholder and styling to search input
+        $('.dataTables_filter input')
+            .attr('placeholder', 'Search payments...')
+            .addClass('border border-gray-300 rounded-lg px-3 py-2');
+    }
+});
+    
+    // Add custom filtering function AFTER table is initialized
+    $.fn.dataTable.ext.search.push(
+        function(settings, data, dataIndex) {
+            const minDate = $('#min').val() ? moment($('#min').val()) : null;
+            const maxDate = $('#max').val() ? moment($('#max').val()).endOf('day') : null;
+            
+            // Extract date from the date column (index 4)
+            const dateOrder = $(table.cell(dataIndex, 4).node()).attr('data-order');
+            const date = moment(dateOrder, 'YYYY-MM-DD');
+            
+            if (
+                (minDate === null && maxDate === null) ||
+                (minDate === null && date.isSameOrBefore(maxDate)) ||
+                (minDate.isSameOrBefore(date) && maxDate === null) ||
+                (minDate.isSameOrBefore(date) && date.isSameOrBefore(maxDate))
+            ) {
+                return true;
+            }
+            return false;
+        }
+    );
+    
+    // Apply date filter button
+    $('#applyDateFilter').on('click', function() {
+        const minDate = $('#min').val();
+        const maxDate = $('#max').val();
+        
+        if (minDate || maxDate) {
+            // Show the active filter badge
+            $('#activeFilterBadge').show();
+            
+            // Format the date range text
+            let filterText = '';
+            if (minDate && maxDate) {
+                filterText = `${moment(minDate).format('MMM D, YYYY')} - ${moment(maxDate).format('MMM D, YYYY')}`;
+            } else if (minDate) {
+                filterText = `From ${moment(minDate).format('MMM D, YYYY')}`;
+            } else {
+                filterText = `Until ${moment(maxDate).format('MMM D, YYYY')}`;
+            }
+            
+            $('#filterDateRange').text(filterText);
+        } else {
+            $('#activeFilterBadge').hide();
+        }
+        
+        // Redraw the table to apply the filter
+        table.draw();
+    });
+    
+    // Clear date filter button
+    $('#clearDateFilter, #removeFilter').on('click', function() {
+        // Clear the date inputs
+        $('#min, #max').val('');
+        
+        // Reset the min/max date constraints
+        $('#min').attr('max', today);
+        $('#max').attr('min', '');
+        
+        // Hide the active filter badge
+        $('#activeFilterBadge').hide();
+        
+        // Redraw the table to remove the filter
+        table.draw();
+    });
+    
+    // Event listener for payment detail buttons
+    $(document).on('click', '.view-payment-details', function() {
+        const paymentId = $(this).data('payment-id');
+        viewPaymentDetails(paymentId);
+    });
+
+    // Monthly Revenue Chart
+    if (document.getElementById('monthlyRevenueChart')) {
+        const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        new Chart(monthlyRevenueCtx, {
+            type: 'line',
+            data: {
+                labels: {{ monthly_labels|safe }},
+                datasets: [{
+                    label: 'Monthly Revenue',
+                    data: {{ monthly_data|safe }},
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '₦' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₦' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Course Revenue Chart
+    if (document.getElementById('courseRevenueChart')) {
+        const courseRevenueCtx = document.getElementById('courseRevenueChart').getContext('2d');
+        new Chart(courseRevenueCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ course_labels|safe }},
+                datasets: [{
+                    data: {{ course_data|safe }},
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(139, 92, 246, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ₦${value.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

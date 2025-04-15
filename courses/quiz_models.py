@@ -36,6 +36,9 @@ class Question(models.Model):
     def __str__(self):
         return f"{self.text[:50]}..."
 
+    def get_correct_answer(self):
+        """Get the correct answer for this question"""
+        return self.answers.filter(is_correct=True).first()
 
 class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')

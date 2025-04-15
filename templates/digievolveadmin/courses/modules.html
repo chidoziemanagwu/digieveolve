@@ -3,6 +3,160 @@
 
 {% block title %}Module Management{% endblock %}
 
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+<style>
+    /* DataTables overrides */
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_filter input {
+        min-width: 80px;
+        max-width: 200px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+        background: #F59E0B !important;
+        border-color: #F59E0B !important;
+        color: white !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #F59E0B !important;
+        border-color: #F59E0B !important;
+        color: white !important;
+    }
+
+    .dt-button {
+        color: white !important;
+    }
+
+    /* Content formatting */
+    .prose {
+        max-width: none;
+    }
+    .prose ul {
+        list-style-type: disc;
+        padding-left: 1.5em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    .prose ol {
+        list-style-type: decimal;
+        padding-left: 1.5em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    .prose p {
+        margin-bottom: 0.75em;
+    }
+    .prose a {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+    .prose a:hover {
+        color: #1d4ed8;
+    }
+
+    /* Modal and drag-and-drop styles */
+    .cursor-move {
+        cursor: move;
+    }
+    #sortableModules li {
+        transition: background-color 0.2s ease;
+    }
+    #sortableModules li:hover {
+        background-color: #f3f4f6;
+    }
+    .sortable-ghost {
+        opacity: 0.5;
+    }
+    .sortable-chosen {
+        background-color: #fef3c7 !important;
+    }
+
+    /* Search functionality styles */
+    #moduleSearch:focus + .clear-search {
+        display: block;
+    }
+
+    .search-highlight {
+        background-color: #fef3c7;
+        padding: 0.125rem 0;
+    }
+
+    [data-module-id] {
+        transition: opacity 0.3s ease;
+    }
+
+    .mb-8 {
+        transition: opacity 0.3s ease;
+    }
+
+    /* Search input styles */
+    .search-container {
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9CA3AF;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #9CA3AF;
+        display: none;
+    }
+
+    .clear-search:hover {
+        color: #6B7280;
+    }
+
+    /* Animation for search results */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    /* No results message styling */
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        margin: 1rem 0;
+    }
+
+    .no-results i {
+        font-size: 3rem;
+        color: #9CA3AF;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+
+
+
+
 {% block content %}
 <div class="space-y-6">
     <!-- Header -->
@@ -15,7 +169,24 @@
         </div>
     </div>
 
-    <!-- Messages -->
+    <!-- Add this right after the Header div and before the Messages section -->
+<!-- Replace the existing search bar div with this -->
+<div class="">
+    <div class="relative flex items-center max-w-3xl mx-auto">
+        <span class="absolute left-3 text-gray-400">
+            <i class="fas fa-search"></i>
+        </span>
+        <input type="text" 
+               id="moduleSearch" 
+               class="w-full pl-10 pr-10 py-2.5 mr-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
+               placeholder="Search modules by title, description, or content...">
+        <button class="absolute right-3 text-gray-400 hover:text-gray-600 hidden" id="clearSearch">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Messages -->
     {% if messages %}
     <div class="space-y-2">
         {% for message in messages %}
@@ -199,19 +370,110 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Search functionality
+// Search functionality
+const searchInput = document.getElementById('moduleSearch');
+if (searchInput) {
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        
+        // Add debounce to prevent excessive searching
+        searchTimeout = setTimeout(() => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const moduleElements = document.querySelectorAll('[data-module-id]');
+            let visibleCount = 0;
+
+            moduleElements.forEach(moduleEl => {
+                // Safely get text content with null checks
+                const titleEl = moduleEl.querySelector('h4');
+                const descEl = moduleEl.querySelector('p');
+                const contentEl = moduleEl.querySelector('.prose');
+                
+                const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+                const description = descEl ? descEl.textContent.toLowerCase() : '';
+                const content = contentEl ? contentEl.textContent.toLowerCase() : '';
+
+                const matches = title.includes(searchTerm) || 
+                              description.includes(searchTerm) || 
+                              content.includes(searchTerm);
+
+                if (matches) {
+                    moduleEl.style.display = '';
+                    moduleEl.classList.add('fade-in');
+                    visibleCount++;
+                    
+                    // Show parent course section
+                    let courseSection = moduleEl.closest('.mb-8');
+                    if (courseSection) {
+                        courseSection.style.display = '';
+                    }
+                } else {
+                    moduleEl.style.display = 'none';
+                    moduleEl.classList.remove('fade-in');
+                }
+            });
+
+            // Handle course sections visibility
+            document.querySelectorAll('.mb-8').forEach(courseSection => {
+                const visibleModules = courseSection.querySelectorAll('[data-module-id]:not([style*="display: none"])');
+                courseSection.style.display = visibleModules.length === 0 ? 'none' : '';
+            });
+
+            // Handle no results message
+            updateNoResultsMessage(visibleCount, searchTerm);
+        }, 300); // 300ms debounce
+    });
+
+    // Add clear search button functionality
+    const clearButton = document.getElementById('clearSearch');
+    if (clearButton) {
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            this.style.display = 'none';
+        });
+
+        searchInput.addEventListener('input', function() {
+            clearButton.style.display = this.value ? 'block' : 'none';
+        });
+    }
+}
+
+
+
+// Helper function to update no results message
+    function updateNoResultsMessage(visibleCount, searchTerm) {
+        let noResultsEl = document.getElementById('noSearchResults');
+        
+        if (visibleCount === 0 && searchTerm) {
+            if (!noResultsEl) {
+                noResultsEl = document.createElement('div');
+                noResultsEl.id = 'noSearchResults';
+                noResultsEl.className = 'no-results fade-in';
+                noResultsEl.innerHTML = `
+                    <i class="fas fa-search"></i>
+                    <p class="text-gray-500">No modules found matching "${searchTerm}"</p>
+                `;
+                document.querySelector('.space-y-6').appendChild(noResultsEl);
+            }
+        } else if (noResultsEl) {
+            noResultsEl.remove();
+        }
+    }
+
+    // Module reordering functionality
     window.showCourseModules = function(courseId) {
-        // Hide all course module containers
         document.querySelectorAll('.course-modules-container').forEach(container => {
             container.classList.add('hidden');
         });
 
-        // Show selected course's modules
         if (courseId) {
             const selectedContainer = document.getElementById(`courseModules-${courseId}`);
             if (selectedContainer) {
                 selectedContainer.classList.remove('hidden');
                 
-                // Initialize sortable if not already done
                 if (!sortableInstances[courseId]) {
                     const el = document.getElementById(`sortableModules-${courseId}`);
                     sortableInstances[courseId] = new Sortable(el, {
@@ -225,10 +487,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.openReorderModal = function() {
         document.getElementById('reorderModal').classList.remove('hidden');
-        // Reset course selector
         const courseSelector = document.getElementById('courseSelector');
         courseSelector.value = '';
-        // Hide all course modules initially
         document.querySelectorAll('.course-modules-container').forEach(container => {
             container.classList.add('hidden');
         });
@@ -290,50 +550,4 @@ document.addEventListener('DOMContentLoaded', function() {
     {% endif %}
 });
 </script>
-
-<style>
-/* Add these styles for better content formatting */
-.prose {
-    max-width: none;
-}
-.prose ul {
-    list-style-type: disc;
-    padding-left: 1.5em;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-}
-.prose ol {
-    list-style-type: decimal;
-    padding-left: 1.5em;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-}
-.prose p {
-    margin-bottom: 0.75em;
-}
-.prose a {
-    color: #2563eb;
-    text-decoration: underline;
-}
-.prose a:hover {
-    color: #1d4ed8;
-}
-
-/* Modal and drag-and-drop styles */
-.cursor-move {
-    cursor: move;
-}
-#sortableModules li {
-    transition: background-color 0.2s ease;
-}
-#sortableModules li:hover {
-    background-color: #f3f4f6;
-}
-.sortable-ghost {
-    opacity: 0.5;
-}
-.sortable-chosen {
-    background-color: #fef3c7 !important;
-}
-</style>
 {% endblock %}

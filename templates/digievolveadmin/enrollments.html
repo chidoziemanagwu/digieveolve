@@ -4,24 +4,266 @@
 
 {% block extra_css %}
 <!-- DataTables CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+<style>
+    /* DataTables styling */
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #E5E7EB;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        min-width: 80px;
+        max-width: 200px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+        background: #3B82F6 !important;
+        border-color: #3B82F6 !important;
+        color: white !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #3B82F6 !important;
+        border-color: #3B82F6 !important;
+        color: white !important;
+    }
+    
+    .dataTables_wrapper .dataTables_info {
+        padding-top: 1rem;
+        font-size: 0.875rem;
+        color: #6B7280;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate {
+        padding-top: 1rem;
+    }
+    
+    /* Table styling */
+    #enrollmentsTable {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+    
+    #enrollmentsTable thead th {
+        background-color: #F3F4F6;
+        color: #374151;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.75rem 1rem;
+        border-bottom: 2px solid #E5E7EB;
+    }
+    
+    #enrollmentsTable tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    #enrollmentsTable tbody tr:hover {
+        background-color: #F9FAFB;
+    }
+    
+    #enrollmentsTable td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #E5E7EB;
+    }
+    
+    /* Progress bar styling */
+    .progress-bar {
+        height: 0.5rem;
+        border-radius: 9999px;
+        background-color: #E5E7EB;
+        overflow: hidden;
+        margin-bottom: 0.25rem;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.5s ease;
+    }
+    
+    /* Status badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+    
+    .status-badge.completed {
+        background-color: #D1FAE5;
+        color: #065F46;
+    }
+    
+    .status-badge.in-progress {
+        background-color: #FEF3C7;
+        color: #92400E;
+    }
+    
+    /* Filter controls */
+    .filter-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #F9FAFB;
+        border-radius: 0.5rem;
+        border: 1px solid #E5E7EB;
+    }
+    
+    .filter-control {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-control label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-control select,
+    .filter-control input {
+        padding: 0.5rem;
+        border: 1px solid #E5E7EB;
+        border-radius: 0.375rem;
+        background-color: white;
+        color: #1F2937;
+        font-size: 0.875rem;
+    }
+    
+    .filter-control select:focus,
+    .filter-control input:focus {
+        outline: none;
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Action buttons */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .action-btn.view {
+        color: #3B82F6;
+        background-color: #EFF6FF;
+    }
+    
+    .action-btn.view:hover {
+        background-color: #DBEAFE;
+    }
+    
+    .action-btn.unenroll {
+        color: #EF4444;
+        background-color: #FEF2F2;
+    }
+    
+    .action-btn.unenroll:hover {
+        background-color: #FEE2E2;
+    }
+    
+    /* Modal styling */
+    .modal-backdrop {
+        transition: opacity 0.3s ease;
+    }
+    
+    .modal-content {
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    
+    .modal-open .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+    
+    /* Notification styling */
+    .notification {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 50;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        color: white;
+        max-width: 24rem;
+        animation: slideIn 0.3s ease forwards;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        .filter-control {
+            min-width: 100%;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="bg-white rounded-lg shadow">
     <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
                 <h2 class="text-xl font-semibold">Enrollments</h2>
                 <p class="text-gray-600 text-sm mt-1">Total Enrollments: {{ total_enrollments }}</p>
             </div>
-            <div class="flex space-x-4">
-                <select id="courseFilter" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+        </div>
+
+        <!-- Enhanced Filter Controls -->
+        <div class="filter-controls">
+            <div class="filter-control">
+                <label for="searchFilter">Search</label>
+                <input type="text" id="searchFilter" placeholder="Search by name, email, course..." class="search-input bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+            </div>
+            <div class="filter-control">
+                <label for="courseFilter">Course</label>
+                <select id="courseFilter" class="course-select bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
                     <option value="">All Courses</option>
                     {% for course in courses %}
                     <option value="{{ course.title }}">{{ course.title }}</option>
                     {% endfor %}
+                </select>
+            </div>
+            <div class="filter-control mb-2">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter" class="status-select  bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+                    <option value="">All Statuses</option>
+                    <option value="Completed">Completed</option>
+                    <option value="In Progress">In Progress</option>
                 </select>
             </div>
         </div>
@@ -31,12 +273,12 @@
             <table id="enrollmentsTable" class="min-w-full divide-y divide-gray-200">
                 <thead>
                     <tr>
-                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
-                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Progress</th>
-                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -46,10 +288,10 @@
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-10 w-10">
                                     {% if enrollment.student.avatar %}
-                                        <img class="h-10 w-10 rounded-full" src="{{ enrollment.student.avatar.url }}" alt="">
+                                        <img class="h-10 w-10 rounded-full object-cover" src="{{ enrollment.student.avatar.url }}" alt="{{ enrollment.student.get_full_name }}">
                                     {% else %}
-                                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <i class="fas fa-user text-gray-400"></i>
+                                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <span class="text-blue-600 font-medium">{{ enrollment.student.get_full_name|slice:":1" }}</span>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -64,40 +306,40 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ enrollment.course.title }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ enrollment.course.title }}</div>
                             <div class="text-sm text-gray-500">{{ enrollment.course.level }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            {{ enrollment.enrollment_date|date:"M d, Y" }}
+                            <div class="text-sm text-gray-900">{{ enrollment.enrollment_date|date:"M d, Y" }}</div>
+                            <div class="text-xs text-gray-500">{{ enrollment.enrollment_date|time:"g:i A" }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ enrollment.progress }}%"></div>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill bg-blue-600" style="width: {{ enrollment.progress }}%"></div>
                             </div>
-                            <span class="text-sm text-gray-600">{{ enrollment.progress }}%</span>
+                            <div class="text-xs text-gray-600 text-right">{{ enrollment.progress }}%</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if enrollment.is_completed %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Completed
+                            <span class="status-badge completed text-green-700">
+                                <i class="fas fa-check-circle mr-1 text-green-700"></i>Completed
                             </span>
                             {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                In Progress
+                            <span class="status-badge in-progress text-yellow-700">
+                                <i class="fas fa-clock mr-1 text-yellow-700"></i>In Progress
                             </span>
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex space-x-2">
                                 <a href="{% url 'accounts:admin_view_student' enrollment.student.id %}" 
-                                   class="text-blue-600 hover:text-blue-900">
+                                   class="action-btn view text-blue-700">
                                     <i class="fas fa-eye mr-1"></i>View
                                 </a>
-                                <!-- Update the unenroll button in the modal -->
                                 <button onclick="confirmUnenroll('{{ enrollment.id }}', '{{ enrollment.student.get_full_name|escapejs }}', '{{ enrollment.course.title|escapejs }}')"
-                                class="text-red-600 hover:text-red-900">
-                            <i class="fas fa-user-minus mr-1"></i>Unenroll
-                        </button>
+                                        class="action-btn unenroll text-red-700">
+                                    <i class="fas fa-user-minus mr-1"></i>Unenroll
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -120,9 +362,9 @@
 <!-- Unenroll Confirmation Modal -->
 <div id="unenrollModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity modal-backdrop" aria-hidden="true"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full modal-content">
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                     <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -156,28 +398,40 @@
 
 {% block extra_js %}
 <!-- DataTables JS -->
-<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
+    // Initialize DataTable with enhanced features
     var table = $('#enrollmentsTable').DataTable({
-        responsive: {
-            details: {
-                display: $.fn.dataTable.Responsive.display.modal({
-                    header: function(row) {
-                        var data = row.data();
-                        return 'Enrollment Details';
-                    }
-                }),
-                renderer: $.fn.dataTable.Responsive.renderer.tableAll({
-                    tableClass: 'table'
-                })
+        responsive: true,
+        dom: '<"flex flex-col md:flex-row justify-between items-center mb-4"<"flex-1"B><"flex-1 text-right"f>>' +
+             '<"overflow-x-auto"rt>' +
+             '<"flex flex-col md:flex-row justify-between items-center mt-4"<"flex-1"l><"flex-1"i><"flex-1"p>>',
+        buttons: [
+            {
+                extend: 'csv',
+                text: '<i class="fas fa-file-csv mr-1"></i> Export CSV',
+                className: 'bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                }
+            },
+            {
+                extend: 'excel',
+                text: '<i class="fas fa-file-excel mr-1"></i> Export Excel',
+                className: 'bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ml-2',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                }
             }
-        },
+        ],
         pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         order: [[2, 'desc']], // Sort by date by default
         columnDefs: [
             { responsivePriority: 1, targets: [0] }, // Student
@@ -189,29 +443,49 @@ $(document).ready(function() {
         ],
         language: {
             search: "Search:",
-            lengthMenu: "Show _MENU_ entries per page",
+            lengthMenu: "_MENU_ per page",
             info: "Showing _START_ to _END_ of _TOTAL_ enrollments",
             infoEmpty: "No enrollments found",
             infoFiltered: "(filtered from _MAX_ total enrollments)",
-            zeroRecords: "No matching enrollments found"
+            zeroRecords: "No matching enrollments found",
+            paginate: {
+                first: '<i class="fas fa-angle-double-left"></i>',
+                previous: '<i class="fas fa-angle-left"></i>',
+                next: '<i class="fas fa-angle-right"></i>',
+                last: '<i class="fas fa-angle-double-right"></i>'
+            }
         },
         drawCallback: function(settings) {
-            // Reinitialize tooltips after table draw
-            $('[data-tooltip]').tooltip();
+            // Apply styling to pagination buttons
+            $('.paginate_button').addClass('px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700');
+            $('.paginate_button.current').addClass('text-white bg-blue-600 hover:bg-blue-700 border-blue-600');
+            
+            // Style the length and search inputs
+            $('.dataTables_length select').addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5');
+            $('.dataTables_filter input').addClass('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5');
         }
     });
 
-    // Course filter functionality with debounce
-    var filterTimeout;
-    $('#courseFilter').on('change', function() {
-        clearTimeout(filterTimeout);
-        filterTimeout = setTimeout(function() {
-            var selectedCourse = $('#courseFilter').val();
-            table.column(1).search(selectedCourse).draw();
-        }, 300);
+    // Connect custom search input to DataTables
+    $('#searchFilter').on('keyup', function() {
+        table.search(this.value).draw();
     });
+
+    // Connect course filter to DataTables
+    $('#courseFilter').on('change', function() {
+        table.column(1).search(this.value).draw();
+    });
+
+    // Connect status filter to DataTables
+    $('#statusFilter').on('change', function() {
+        table.column(4).search(this.value).draw();
+    });
+
+    // Make DataTables search box hidden since we're using our custom one
+    $('.dataTables_filter').hide();
 });
 
+// Modal functionality with animation
 function confirmUnenroll(enrollmentId, studentName, courseName) {
     const modal = document.getElementById('unenrollModal');
     const unenrollForm = document.getElementById('unenrollForm');
@@ -219,54 +493,137 @@ function confirmUnenroll(enrollmentId, studentName, courseName) {
     
     confirmationText.textContent = `Are you sure you want to unenroll ${studentName} from ${courseName}? This action cannot be undone.`;
     unenrollForm.action = `/accounts/digievolveadmin/enrollments/${enrollmentId}/unenroll/`;
+    
+    // Add animation classes
     modal.classList.remove('hidden');
+    modal.classList.add('modal-open');
+    
+    // Focus on cancel button for accessibility
+    setTimeout(() => {
+        document.querySelector('#unenrollModal button[type="button"]').focus();
+    }, 100);
 }
 
 function closeUnenrollModal() {
     const modal = document.getElementById('unenrollModal');
-    modal.classList.add('hidden');
+    
+    // Remove animation classes
+    modal.classList.remove('modal-open');
+    
+    // Delay the hiding to allow animation to complete
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
 }
 
-// Add this to your JavaScript section
+// Enhanced AJAX form submission with better error handling
 $('#unenrollForm').on('submit', function(e) {
     e.preventDefault();
+    
+    const submitButton = $(this).find('button[type="submit"]');
+    const originalText = submitButton.html();
+    
+    // Disable button and show loading state
+    submitButton.html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...').prop('disabled', true);
     
     $.ajax({
         url: this.action,
         method: 'POST',
         data: $(this).serialize(),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         success: function(response) {
+            closeUnenrollModal();
+            
             if (response.success) {
-                // Reload the table
-                $('#enrollmentsTable').DataTable().ajax.reload();
-                closeUnenrollModal();
-                // Show success message
-                showNotification('Student successfully unenrolled', 'success');
+                showNotification(response.message, 'success');
+                // Reload the page after a short delay
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1500);
             } else {
-                showNotification('Failed to unenroll student', 'error');
+                showNotification(response.message || 'An error occurred', 'error');
+                // Reset button
+                submitButton.html(originalText).prop('disabled', false);
             }
         },
         error: function(xhr, status, error) {
-            showNotification('An error occurred while processing your request', 'error');
+            closeUnenrollModal();
+            
+            // Try to parse error message from response
+            let errorMessage = 'An error occurred while processing your request';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.message) {
+                    errorMessage = response.message;
+                }
+            } catch (e) {
+                console.error('Error parsing error response:', e);
+            }
+            
+            showNotification(errorMessage, 'error');
+            
+            // Reset button
+            submitButton.html(originalText).prop('disabled', false);
         }
     });
 });
 
+// Enhanced notification with animation
 function showNotification(message, type) {
-    const notificationClass = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    // Remove any existing notifications
+    $('.notification').remove();
+    
+    const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+    const icon = type === 'success' ? 
+        '<i class="fas fa-check-circle mr-2"></i>' : 
+        '<i class="fas fa-exclamation-circle mr-2"></i>';
+    
     const notification = `
-        <div class="fixed top-4 right-4 z-50 ${notificationClass} text-white px-6 py-3 rounded shadow-lg" 
-             style="transition: opacity 0.5s ease-in-out">
-            ${message}
+        <div class="notification ${bgColor}">
+            <div class="flex items-center">
+                ${icon}
+                <div>${message}</div>
+            </div>
         </div>
     `;
     
     const $notification = $(notification).appendTo('body');
+    
+    // Auto-dismiss after delay
     setTimeout(() => {
-        $notification.fadeOut('slow', function() {
-            $(this).remove();
+        $notification.css({
+            'transform': 'translateX(100%)',
+            'opacity': '0',
+            'transition': 'transform 0.3s ease, opacity 0.3s ease'
         });
+        
+        // Remove from DOM after animation completes
+        setTimeout(() => {
+            $notification.remove();
+        }, 300);
     }, 3000);
 }
+
+// Handle escape key to close modal
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeUnenrollModal();
+    }
+});
+
+// Prevent modal from closing when clicking inside the modal content
+document.querySelector('.modal-content')?.addEventListener('click', function(event) {
+    event.stopPropagation();
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('unenrollModal');
+    if (event.target === modal) {
+        closeUnenrollModal();
+    }
+});
 </script>
 {% endblock %}

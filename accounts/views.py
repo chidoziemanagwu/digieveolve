@@ -24,12 +24,12 @@ from django.db import IntegrityError, models, transaction  # Add this import for
 from .forms import StudentRegistrationForm, CustomLoginForm  # Add
 import logging
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Count, Sum
 from blog.models import BlogPost
-from django.db.models.functions import TruncDate
-from django.db.models import Q
+from django.db.models.functions import Cast, Coalesce, TruncDate
+from django.db.models import Count, Sum, Q, F, FloatField, Avg, DecimalField
 from .decorators import admin_login_required
-
+from django.http import JsonResponse
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -844,30 +844,118 @@ def admin_enrollments(request):
 
 @admin_login_required
 def admin_reports(request):
-    # Get enrollment statistics
-    enrollment_stats = Enrollment.objects.annotate(
+    # Calculate total statistics
+    total_students = User.objects.filter(is_student=True).count()
+    total_courses = Course.objects.count()
+    total_enrollments = Enrollment.objects.count()
+    total_revenue = Payment.objects.filter(status='completed').aggregate(
+        Sum('amount'))['amount__sum'] or 0
+
+    # Get enrollment statistics for the last 30 days
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    enrollment_stats = Enrollment.objects.filter(
+        enrollment_date__gte=thirty_days_ago
+    ).annotate(
         date=TruncDate('enrollment_date')
     ).values('date').annotate(
         count=Count('id')
-    ).order_by('-date')[:30]
+    ).order_by('date')
 
-    # Get revenue statistics
+    # Format enrollment data for Chart.js
+    enrollment_dates = [stat['date'].strftime('%Y-%m-%d') for stat in enrollment_stats]
+    enrollment_counts = [stat['count'] for stat in enrollment_stats]
+
+    # Get revenue statistics for the last 30 days
     revenue_stats = Payment.objects.filter(
-        status='completed'
+        status='completed',
+        created_at__gte=thirty_days_ago
     ).annotate(
         date=TruncDate('created_at')
     ).values('date').annotate(
         total=Sum('amount')
-    ).order_by('-date')[:30]
+    ).order_by('date')
+
+    # Format revenue data for Chart.js
+    revenue_dates = [stat['date'].strftime('%Y-%m-%d') for stat in revenue_stats]
+    revenue_amounts = [float(stat['total']) for stat in revenue_stats]
+
+    # Get course performance data
+    courses = Course.objects.annotate(
+        enrollment_count=Count('Course_enrollments'),
+        completion_rate=models.ExpressionWrapper(
+            100.0 * Count('Course_enrollments', filter=Q(Course_enrollments__is_completed=True)) /
+            Cast(Count('Course_enrollments'), models.FloatField()),
+            output_field=models.FloatField()
+        ),
+        revenue=Coalesce(
+            Sum('Course_payment_enrollments__amount',
+                filter=Q(Course_payment_enrollments__status='completed')),
+            0,
+            output_field=models.DecimalField()
+        )
+    ).filter(
+        enrollment_count__gt=0
+    )
+
+    # Get user statistics
+    active_users = User.objects.filter(
+        is_student=True,
+        is_active=True,
+        last_login__gte=thirty_days_ago
+    ).count()
+
+    inactive_users = User.objects.filter(
+        is_student=True,
+        is_active=True,
+        last_login__lt=thirty_days_ago
+    ).count()
+
+    new_users = User.objects.filter(
+        is_student=True,
+        date_joined__gte=thirty_days_ago
+    ).count()
+
+    # Calculate average completion rate
+    avg_completion_rate = Enrollment.objects.filter(
+        is_completed=True
+    ).count() / total_enrollments * 100 if total_enrollments > 0 else 0
 
     context = {
-        'enrollment_stats': enrollment_stats,
-        'revenue_stats': revenue_stats
+        # Summary statistics
+        'total_students': total_students,
+        'total_courses': total_courses,
+        'total_enrollments': total_enrollments,
+        'total_revenue': total_revenue,
+        'avg_completion_rate': round(avg_completion_rate, 1),
+
+        # Enrollment chart data
+        'enrollment_dates': enrollment_dates,
+        'enrollment_counts': enrollment_counts,
+
+        # Revenue chart data
+        'revenue_dates': revenue_dates,
+        'revenue_amounts': revenue_amounts,
+
+        # Course performance data
+        'courses': courses,
+
+        # User statistics
+        'active_users': active_users,
+        'inactive_users': inactive_users,
+        'new_users': new_users,
     }
+
     return render(request, 'digievolveadmin/reports.html', context)
+
+
+
 
 @admin_login_required
 def admin_revenue(request):
+    # Get current date and time
+    today = timezone.now()
+    current_month = today.strftime('%B %Y')
+
     # Get all completed payments
     payments = Payment.objects.filter(
         status='completed'
@@ -876,13 +964,116 @@ def admin_revenue(request):
     ).order_by('-created_at')
 
     # Calculate total revenue
-    total_revenue = payments.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_revenue = payments.aggregate(
+        total=Coalesce(
+            Sum(Cast('amount', DecimalField(max_digits=10, decimal_places=2))),
+            0,
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )['total']
+
+    # Calculate monthly revenue
+    monthly_revenue = payments.filter(
+        created_at__month=today.month,
+        created_at__year=today.year
+    ).aggregate(
+        total=Coalesce(
+            Sum(Cast('amount', DecimalField(max_digits=10, decimal_places=2))),
+            0,
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )['total']
+
+    # Calculate daily revenue
+    daily_revenue = payments.filter(
+        created_at__date=today.date()
+    ).aggregate(
+        total=Coalesce(
+            Sum(Cast('amount', DecimalField(max_digits=10, decimal_places=2))),
+            0,
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )['total']
+
+    # Calculate average transaction amount
+    avg_transaction = payments.aggregate(
+        avg=Coalesce(
+            Avg(Cast('amount', DecimalField(max_digits=10, decimal_places=2))),
+            0,
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )['avg']
+
+    # Get monthly revenue trend data
+    monthly_stats = payments.annotate(
+        month=TruncDate('created_at')
+    ).values('month').annotate(
+        total=Sum(
+            Cast('amount', DecimalField(max_digits=10, decimal_places=2)),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    ).order_by('month')
+
+    monthly_labels = [stat['month'].strftime('%Y-%m-%d') for stat in monthly_stats]
+    monthly_data = [float(stat['total']) for stat in monthly_stats]
+
+    # Get revenue by course data
+    course_stats = payments.values(
+        'course__title'
+    ).annotate(
+        total=Sum(
+            Cast('amount', DecimalField(max_digits=10, decimal_places=2)),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    ).order_by('-total')
+
+    course_labels = [stat['course__title'] for stat in course_stats]
+    course_data = [float(stat['total']) for stat in course_stats]
 
     context = {
+        # Summary cards data
+        'total_revenue': total_revenue,
+        'monthly_revenue': monthly_revenue,
+        'daily_revenue': daily_revenue,
+        'avg_transaction': avg_transaction,
+        'current_month': current_month,
+        'today': today,
+
+        # Chart data
+        'monthly_labels': json.dumps(monthly_labels),
+        'monthly_data': json.dumps(monthly_data),
+        'course_labels': json.dumps(course_labels),
+        'course_data': json.dumps(course_data),
+
+        # Table data
         'payments': payments,
-        'total_revenue': total_revenue
     }
+
     return render(request, 'digievolveadmin/revenue.html', context)
+
+
+
+@admin_login_required
+def payment_detail_api(request, payment_id):
+    try:
+        payment = Payment.objects.select_related('student', 'course').get(id=payment_id)
+        data = {
+            'reference': payment.reference,
+            'student_name': f"{payment.student.first_name} {payment.student.last_name}",
+            'course_title': payment.course.title,
+            'amount': float(payment.amount),
+            'created_at': payment.created_at.strftime('%B %d, %Y'),
+            'status': payment.status
+        }
+        return JsonResponse(data)
+    except Payment.DoesNotExist:
+        return JsonResponse({'error': 'Payment not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+        
+
 
 @admin_login_required
 def admin_settings(request):
@@ -904,11 +1095,11 @@ def admin_settings(request):
 @admin_login_required
 def admin_unenroll_student(request, enrollment_id):
     if request.method == 'POST':
-        enrollment = get_object_or_404(Enrollment, id=enrollment_id)
-        student_name = enrollment.student.get_full_name()  # Use get_full_name() method
-        course_title = enrollment.course.title
-
         try:
+            enrollment = get_object_or_404(Enrollment, id=enrollment_id)
+            student_name = enrollment.student.get_full_name()
+            course_title = enrollment.course.title
+
             # Record activity before deletion
             Activity.objects.create(
                 user=enrollment.student,
@@ -920,24 +1111,27 @@ def admin_unenroll_student(request, enrollment_id):
             # Delete the enrollment
             enrollment.delete()
 
-            messages.success(
-                request,
-                f'Successfully unenrolled {student_name} from {course_title}'
-            )
-
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': True})
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Successfully unenrolled {student_name} from {course_title}'
+                })
+
+            messages.success(request, f'Successfully unenrolled {student_name} from {course_title}')
+            return redirect('accounts:admin_enrollments')
 
         except Exception as e:
-            messages.error(
-                request,
-                f'Error unenrolling student: {str(e)}'
-            )
-
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': str(e)})
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Error: {str(e)}'
+                })
 
-    return redirect('accounts:admin_enrollments')
+            messages.error(request, f'Error unenrolling student: {str(e)}')
+            return redirect('accounts:admin_enrollments')
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
 
 
 
