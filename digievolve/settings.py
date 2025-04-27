@@ -209,7 +209,7 @@ else:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
-    CSRF_TRUSTED_ORIGINS = ['https://digieveolve.onrender.com', 'https://digievolvehub.com', 'https://www.digievolvehub.com']
+    CSRF_TRUSTED_ORIGINS = ['https://digieveolve.onrender.com', 'https://digievolvehub.com', 'https://www.digievolvehub.com', 'https://digievolvehub-888181009730.us-central1.run.app']
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files settings
