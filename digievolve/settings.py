@@ -201,7 +201,8 @@ else:
     '.ondigitalocean.app',  # Add your DigitalOcean app hostname
     '127.0.0.1',  # For local development
     'localhost',  # For local development
-    'digieveolve.onrender.com', 'oyster-app-gevod.ondigitalocean.app', 'digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app'
+    'digievolvehub.com',
+    'digieveolve.onrender.com', 'oyster-app-gevod.ondigitalocean.app', 'digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app', 'www.digievolvehub.com'
 ]
     # Security settings for production
     SECURE_SSL_REDIRECT = True
@@ -209,7 +210,7 @@ else:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
-    CSRF_TRUSTED_ORIGINS = ['https://digieveolve.onrender.com', 'https://digievolvehub.com', 'https://www.digievolvehub.com', 'https://digievolvehub-888181009730.us-central1.run.app']
+    CSRF_TRUSTED_ORIGINS = ['https://digieveolve.onrender.com', 'https://digievolvehub.com', 'https://www.digievolvehub.com', 'https://digievolvehub-888181009730.us-central1.run.app', 'digievolvehub.com', 'www.digievolvehub.com']
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files settings
