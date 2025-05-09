@@ -194,7 +194,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 if DEBUG:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'digievolvehub.com', 'https://digievolvehub.com', 'http://digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app']
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 else:
     ALLOWED_HOSTS = [
@@ -202,7 +202,7 @@ else:
     '127.0.0.1',  # For local development
     'localhost',  # For local development
     'digievolvehub.com',
-    'digieveolve.onrender.com', 'oyster-app-gevod.ondigitalocean.app', 'digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app', 'www.digievolvehub.com'
+    'digieveolve.onrender.com', 'oyster-app-gevod.ondigitalocean.app', 'digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app', 'www.digievolvehub.com', 'https://digievolvehub.com', 'http://digievolvehub.com'
 ]
     # Security settings for production
     SECURE_SSL_REDIRECT = True
