@@ -27,7 +27,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 DEFAULT_ADMIN_EMAIL = os.getenv('DEFAULT_ADMIN_EMAIL')
 DEFAULT_ADMIN_USERNAME = os.getenv('DEFAULT_ADMIN_USERNAME')
@@ -40,8 +41,8 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'error',
 }
-# Application definition
 
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -61,7 +62,7 @@ INSTALLED_APPS = [
     'utils',
     'blog',
     'resources',
-    
+
     # Local apps
     'core.apps.CoreConfig',
     'accounts.apps.AccountsConfig',
@@ -72,9 +73,7 @@ INSTALLED_APPS = [
 # reCAPTCHA settings
 RECAPTCHA_PUBLIC_KEY = 'your_public_key_here'
 RECAPTCHA_PRIVATE_KEY = 'your_private_key_here'
-# Use the following for local development/testing:
 SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -85,24 +84,19 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_browser_reload.middleware.BrowserReloadMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
-
-
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 ROOT_URLCONF = 'digievolve.urls'
 AUTH_USER_MODEL = 'accounts.User'
 
-
-
 # Paystack settings
 PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')
 PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
 PAYSTACK_SUCCESS_URL = 'courses:payment_success'
 PAYSTACK_FAILED_URL = 'courses:payment_failed'
-
 
 PAYSTACK_SETTINGS = {
     'PUBLIC_KEY': PAYSTACK_PUBLIC_KEY,
@@ -113,12 +107,11 @@ PAYSTACK_SETTINGS = {
     'BUTTON_CLASS': 'btn btn-primary',
 }
 
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'templates',  # Add this line
+            BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -127,6 +120,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.settings_context',
             ],
         },
     },
@@ -134,10 +128,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'digievolve.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -147,15 +138,8 @@ DATABASES = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-
-
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    # {
-    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    # },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
@@ -170,66 +154,67 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 # Static files settings
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+# CSRF and Security Settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://digievolvehub.com',
+    'https://www.digievolvehub.com',
+    'https://digievolvehub-888181009730.us-central1.run.app',
+    'https://digieveolve.onrender.com',
+]
 
+# Host and Security Settings based on environment
 if DEBUG:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'digievolvehub.com', 'https://digievolvehub.com', 'http://digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'digievolvehub.com', 'www.digievolvehub.com',
+                     'digievolvehub-888181009730.us-central1.run.app']
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    CSRF_TRUSTED_ORIGINS += [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 else:
     ALLOWED_HOSTS = [
-    '.ondigitalocean.app',  # Add your DigitalOcean app hostname
-    '127.0.0.1',  # For local development
-    'localhost',  # For local development
-    'digievolvehub.com',
-    'digieveolve.onrender.com', 'oyster-app-gevod.ondigitalocean.app', 'digievolvehub.com', 'www.digievolvehub.com', 'digievolvehub-888181009730.us-central1.run.app', 'www.digievolvehub.com', 'https://digievolvehub.com', 'http://digievolvehub.com'
-]
-    # Security settings for production
+        '.ondigitalocean.app',
+        '127.0.0.1',
+        'localhost',
+        'digievolvehub.com',
+        'digieveolve.onrender.com',
+        'oyster-app-gevod.ondigitalocean.app',
+        'www.digievolvehub.com',
+        'digievolvehub-888181009730.us-central1.run.app',
+    ]
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
-    CSRF_TRUSTED_ORIGINS = [
-        'https://digieveolve.onrender.com',
-        'https://digievolvehub.com',
-        'https://www.digievolvehub.com',
-        'https://digievolvehub-888181009730.us-central1.run.app',
-        # Remove entries without protocols like 'digievolvehub.com' or 'www.digievolvehub.com'
-    ]
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Additional Security Settings
+CSRF_COOKIE_HTTPONLY = True
+CSRF_USE_SESSIONS = True
+SESSION_COOKIE_HTTPONLY = True
 
 # Media files settings
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# Cloudflare Turnstile Settings
 CLOUDFLARE_TURNSTILE_SITE_KEY = os.getenv('CLOUDFLARE_TURNSTILE_SITE_KEY')
 CLOUDFLARE_TURNSTILE_SECRET_KEY = os.getenv('CLOUDFLARE_TURNSTILE_SECRET_KEY')
-
-TEMPLATES[0]['OPTIONS']['context_processors'].append('accounts.context_processors.settings_context')

@@ -653,49 +653,61 @@ def admin_login_view(request):
 
     if request.method == 'POST':
         email = request.POST.get('email')
+        username = request.POST.get('username')
         password = request.POST.get('password')
         turnstile_response = request.POST.get('cf-turnstile-response')
 
         # Verify Turnstile response
         if not turnstile_response:
             messages.error(request, "Please complete the security check.")
-            return render(request, 'digievolveadmin/login.html')
+            return render(request, 'digievolveadmin/login.html', {'error': 'Security check required'})
 
         # Verify the token with Cloudflare
         data = {
             'secret': settings.CLOUDFLARE_TURNSTILE_SECRET_KEY,
             'response': turnstile_response,
+            'remoteip': request.META.get('REMOTE_ADDR')
         }
-        response = requests.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', data=data)
-        result = response.json()
-
-        if not result.get('success'):
-            messages.error(request, "Security check failed. Please try again.")
-            return render(request, 'digievolveadmin/login.html')
 
         try:
+            response = requests.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', data=data)
+            result = response.json()
+
+            if not result.get('success'):
+                messages.error(request, "Security check failed. Please try again.")
+                return render(request, 'digievolveadmin/login.html', {'error': 'Security check failed'})
+
             # Find user by email
-            user = User.objects.get(email=email)
+            try:
+                user = User.objects.get(email=email)
+                # Authenticate user
+                authenticated_user = authenticate(username=user.username, password=password)
 
-            # Authenticate user
-            authenticated_user = authenticate(username=user.username, password=password)
-
-            if authenticated_user is not None:
-                # Check if user is an admin
-                if authenticated_user.admin_type != 'none' and authenticated_user.is_active_admin:
-                    login(request, authenticated_user)
-                    # Record login time
-                    authenticated_user.record_admin_login()
-                    messages.success(request, f"Welcome back, {authenticated_user.first_name}!")
-                    return redirect('accounts:admin_dashboard')
+                if authenticated_user is not None:
+                    # Check if user is an admin
+                    if authenticated_user.admin_type != 'none' and authenticated_user.is_active_admin:
+                        login(request, authenticated_user)
+                        # Record login time
+                        authenticated_user.record_admin_login()
+                        messages.success(request, f"Welcome back, {authenticated_user.first_name}!")
+                        return redirect('accounts:admin_dashboard')
+                    else:
+                        messages.error(request, "You don't have admin privileges or your admin account is inactive.")
                 else:
-                    messages.error(request, "You don't have admin privileges or your admin account is inactive.")
-            else:
-                messages.error(request, "Invalid credentials.")
-        except User.DoesNotExist:
-            messages.error(request, "No account found with this email.")
+                    messages.error(request, "Invalid credentials.")
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this email.")
 
-    return render(request, 'digievolveadmin/login.html')
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}")
+            messages.error(request, "An error occurred during login. Please try again.")
+
+    # Add CSRF token to context for GET requests
+    return render(request, 'digievolveadmin/login.html', {
+        'CLOUDFLARE_TURNSTILE_SITE_KEY': settings.CLOUDFLARE_TURNSTILE_SITE_KEY
+    })
+
+
 
 
 @admin_login_required

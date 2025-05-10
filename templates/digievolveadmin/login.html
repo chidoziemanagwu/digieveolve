@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DigiEvolve Admin - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="same-origin">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .cf-turnstile {
@@ -29,24 +31,57 @@
         <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
             <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
                 {% if messages %}
-                    <div id="messages-container" class="rounded-md bg-red-50 p-4 mb-4">
-                        <div class="flex">
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
-                                <div class="mt-2 text-sm text-red-700">
-                                    <ul class="list-disc pl-5 space-y-1">
-                                        {% for message in messages %}
-                                        <li>{{ message }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
+    <div id="messages-container" class="rounded-md p-4 mb-4 {% if messages.tags == 'error' %}bg-red-50{% else %}bg-green-50{% endif %}">
+        <div class="flex">
+            <div class="ml-3">
+                <h3 class="text-sm font-medium {% if messages.tags == 'error' %}text-red-800{% else %}text-green-800{% endif %}">
+                    {% if messages.tags == 'error' %}There were errors with your submission{% else %}Success{% endif %}
+                </h3>
+                <div class="mt-2 text-sm {% if messages.tags == 'error' %}text-red-700{% else %}text-green-700{% endif %}">
+                    <ul class="list-disc pl-5 space-y-1">
+                        {% for message in messages %}
+                        <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
 
-                <form class="space-y-6" method="POST">
+
+                <!-- Add this right after the messages block -->
+{% if form.errors %}
+<div class="rounded-md bg-red-50 p-4 mb-4">
+    <div class="flex">
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">Login Failed</h3>
+            <div class="mt-2 text-sm text-red-700">
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if form.errors.items %}
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+
+                <!-- Change this line -->
+<form class="space-y-6" method="POST" action="{% url 'accounts:admin_login' %}" novalidate>
                     {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next|default:'' }}">
                     
                     <!-- Email Field -->
                     <div>
@@ -86,15 +121,23 @@
 
                     <!-- Cloudflare Turnstile -->
                     <div class="cf-turnstile" 
-                        data-sitekey="0x4AAAAAAA_PrbdWkaPF_0vd" 
-                        data-theme="light">
-                    </div>
+    data-sitekey="{{ CLOUDFLARE_TURNSTILE_SITE_KEY }}"
+    data-theme="light">
+</div>
 
                     <div>
-                        <button type="submit"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Sign in
-                        </button>
+                        <button type="submit" id="submit-button"
+    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+    <span class="flex items-center">
+        <span id="button-text">Sign in</span>
+        <span id="button-loading" class="hidden ml-2">
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </span>
+    </span>
+</button>
                     </div>
                 </form>
 
@@ -119,7 +162,66 @@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     
     <script>
-        // Password toggle functionality
+        // Function to get CSRF token from cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    
+        // Add CSRF token to all AJAX requests
+// Replace your existing form submission code with this
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitButton = document.getElementById('submit-button');
+    const buttonText = document.getElementById('button-text');
+    const buttonLoading = document.getElementById('button-loading');
+
+    // Get CSRF token
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Show loading state
+        buttonText.textContent = 'Signing in...';
+        buttonLoading.classList.remove('hidden');
+        submitButton.disabled = true;
+
+        // Verify Turnstile response
+        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+        if (!turnstileResponse || !turnstileResponse.value) {
+            alert('Please complete the security check');
+            buttonText.textContent = 'Sign in';
+            buttonLoading.classList.add('hidden');
+            submitButton.disabled = false;
+            return;
+        }
+
+        try {
+            // Submit the form
+            this.submit();
+        } catch (error) {
+            console.error('Login error:', error);
+            buttonText.textContent = 'Sign in';
+            buttonLoading.classList.add('hidden');
+            submitButton.disabled = false;
+        }
+    });
+});
+
+
+
+
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
             const icon = event.currentTarget.querySelector('i');
@@ -148,6 +250,18 @@
                 }, 5000);
             }
         });
+
+        window.addEventListener('error', function(e) {
+    const submitButton = document.getElementById('submit-button');
+    const buttonText = document.getElementById('button-text');
+    const buttonLoading = document.getElementById('button-loading');
+    
+    if (submitButton && buttonText && buttonLoading) {
+        buttonText.textContent = 'Sign in';
+        buttonLoading.classList.add('hidden');
+        submitButton.disabled = false;
+    }
+});
     </script>
 </body>
 </html>
